@@ -5,15 +5,18 @@ namespace move {
 	class Move {
 	public:
 		Move() = default;
-		std::string getMovePgn() { return "xd"; };
+		virtual std::string getMovePgn() = 0;
+		int xFrom;
+		int yFrom;
+		int xTo;
+		int yTo;
 	};
 
 	class NormalMove : public Move {
 	public:
 		NormalMove() = default;
-		NormalMove(board::Board board, int xFrom, int yFrom, int xTo, int yTo);
-		std::string getMovePgn();
-		board::Board board;
+		NormalMove(int xFrom, int yFrom, int xTo, int yTo);
+		virtual std::string getMovePgn();
 		float evaluation;
 	};
 }

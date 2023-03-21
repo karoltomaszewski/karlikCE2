@@ -15,19 +15,19 @@ std::string engine::Engine::findBestMove()
 {
 	tempBoard = board::Board(this->originalFen);
 
-	std::vector<move::Move> legalMoves = this->findAllLegalMovesOfPosition();
+	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition();
 
 	std::string s = "";
 
 	for (int i = 0; i < legalMoves.size(); i++) {
-		s += legalMoves[i].getMovePgn() + '\n';
+		s += legalMoves[i]->getMovePgn() + '\n';
 	}
 
 	return s;
 }
 
-std::vector<move::Move> engine::Engine::findAllLegalMovesOfPosition() {
-	std::vector<move::Move> legalMoves = {};
+std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
+	std::vector<move::Move*> legalMoves = {};
 	std::string color = tempBoard.fen.getColor();
 
 	for (int i = 0; i < tempBoard.fields.size(); i++) {
@@ -41,7 +41,7 @@ std::vector<move::Move> engine::Engine::findAllLegalMovesOfPosition() {
 					// ruch o 1 pole do przodu
 					if (tempBoard.isFieldEmpty(field.x, field.y + (1 * piece.isWhite ? 1 : -1))) {
 						if ((field.y == 2 && piece.isWhite) || (field.y == 7 && !piece.isWhite)) { // linia startowa
-							legalMoves.push_back(move::NormalMove(this->tempBoard, field.x, field.y, field.x, field.y + (1 * piece.isWhite ? 1 : -1)));
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (1 * piece.isWhite ? 1 : -1)));
 						}
 						//boardAfterMove =  
 					}

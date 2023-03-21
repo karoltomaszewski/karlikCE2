@@ -30,7 +30,7 @@ namespace engine
 		Evaluator evaluator;
 		FEN::FEN originalFen;
 		std::string findBestMove();
-		std::vector<move::Move> findAllLegalMovesOfPosition();
+		std::vector<move::Move*> findAllLegalMovesOfPosition();
 	private:
 		std::string originalColor;
 	};

@@ -22,6 +22,10 @@ namespace board {
 	public:
 		Board() = default;
 		Board(FEN::FEN fen);
+		Board(const board::Board& board) {
+			fields = board.fields;
+			fen = board.fen;
+		}
 		std::vector<Field> fields;
 		bool isFieldEmpty(int x, int y);
 		bool isFieldOccupiedByOpponentsPiece(int x, int y);
