@@ -18,7 +18,7 @@ std::string engine::Engine::findBestMove()
 	tempBoard = board::Board(this->originalFen);
 
 	int depth = 0;
-	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(); // wszystkie depth 1
+	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(); // wszystkie depth 1  b
 	depth = 1;
 
 	double evaluation;
@@ -27,8 +27,26 @@ std::string engine::Engine::findBestMove()
 	std::string s = "";
 	std::ofstream zapis("dane.txt");
 	for (int i = 0; i < legalMoves.size(); i++) {
-		board::Board tb = tempBoard;
-		tempBoard.makeMove(legalMoves[i]);
+		tempBoard.makeMove(legalMoves[i]); //w
+		board::Board tb = board::Board(tempBoard); //w
+		tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
+
+
+		/*
+		if (legalMoves[i]->getMoveICCF() == "5655") {
+			s += "\n";
+
+			for (int q = 0; q < tempBoard.fields.size(); q++) {
+				if (q % 8 == 0) {
+					s += "\n";
+				}
+
+				s += tempBoard.fields[q].pieceName;
+			}
+
+			s += "\n";
+		}
+		*/
 
 		std::vector<move::Move*> lMoves = this->findAllLegalMovesOfPosition();
 		depth = 2;
@@ -36,7 +54,7 @@ std::string engine::Engine::findBestMove()
 		s += legalMoves[i]->getMoveICCF() + "(" + std::to_string(tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1)) +"): \n";
 
 		for (int j = 0; j < lMoves.size(); j++) {
-			if (lMoves[j]->getMoveICCF() == "6455") {
+			/*if (lMoves[j]->getMoveICCF() == "6455") {
 				s += "\n";
 
 				for (int q = 0; q < tempBoard.fields.size(); q++) {
@@ -48,17 +66,19 @@ std::string engine::Engine::findBestMove()
 				}
 
 				s += "\n";
-			}
+			}*/
 
 
-			tempBoard.makeMove(lMoves[j]);
+			tempBoard.makeMove(lMoves[j]); //b
 			evaluation = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1);
 			
 			s += "\t" + lMoves[j]->getMoveICCF() + " " + std::to_string(evaluation) + " \n";
 
+			/*
 			if (lMoves[j]->getMoveICCF() == "6455") {
 				s += "\n";
 
+				
 				for (int q = 0; q < tempBoard.fields.size(); q++) {
 					if (q % 8 == 0) {
 						s += "\n";
@@ -69,13 +89,14 @@ std::string engine::Engine::findBestMove()
 
 				s += "\n";
 			}
-
-			tempBoard = tb;
+			*/
 
 			if (evaluation > maxEvaluation) {
 				maxEvaluation = evaluation;
 				bestMove = legalMoves[i]->getMoveICCF();
 			}
+
+			tempBoard = tb;
 		}
 		// revert
 		tempBoard = board::Board(this->originalFen);

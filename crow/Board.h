@@ -27,6 +27,7 @@ namespace board {
 		Board(const board::Board& board) {
 			fields = board.fields;
 			fen = board.fen;
+			colorOnMove = board.colorOnMove;
 		}
 		std::vector<Field> fields;
 		bool isFieldEmpty(int x, int y);

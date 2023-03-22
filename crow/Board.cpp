@@ -64,8 +64,7 @@ bool board::Board::isFieldOccupiedByOpponentsPiece(int x, int y) {
 
 	pieces::Piece piece = this->fields[(8 - y) * 8 + (x - 1)].getPiece();
 
-	return true;
-	//return piece.isReal && (this->colorOnMove == FEN::FEN::COLOR_WHITE && !piece.isWhite) || (this->colorOnMove == FEN::FEN::COLOR_BLACK && piece.isWhite);
+	return piece.isReal && (this->colorOnMove == FEN::FEN::COLOR_WHITE && !piece.isWhite) || (this->colorOnMove == FEN::FEN::COLOR_BLACK && piece.isWhite);
 }
 
 bool board::Board::canCaptureOnField(int x, int y) {
@@ -79,8 +78,6 @@ bool board::Board::canCaptureOnField(int x, int y) {
 void board::Board::makeMove(move::Move* move) {
 	this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece());
 	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
-
-	this->colorOnMove = (this->colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 }
 
 double board::Board::evaluate() {

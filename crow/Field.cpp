@@ -6,6 +6,7 @@ board::Field::Field(int x, int y)
 	this->y = y;
 	this->isFieldEmpty = true;
 	this->pieceName = '-';
+	this->piece = pieces::NoPiece('-');
 }
 
 void board::Field::setPiece(pieces::Piece piece)
