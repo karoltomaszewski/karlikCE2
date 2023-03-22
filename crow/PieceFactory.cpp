@@ -19,6 +19,9 @@ pieces::Piece pieces::PieceFactory::create(char pieceName)
 	else if (pieceName == FEN::FEN::QUEEN_BLACK || pieceName == FEN::FEN::QUEEN_WHITE) {
 		return pieces::Queen(pieceName);
 	}
+	else if (pieceName == '-') {
+		return pieces::NoPiece(pieceName);
+	}
 
 	return pieces::King(pieceName);
 }
@@ -52,4 +55,10 @@ pieces::Queen::Queen(char pieceName) {
 pieces::King::King(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::KING_WHITE;
 	this->pieceName = pieceName;
+}
+
+pieces::NoPiece::NoPiece(char pieceName) {
+	this->isWhite = false;
+	this->pieceName = pieceName;
+	this->isReal = false;
 }

@@ -1,11 +1,11 @@
 #pragma once
-#include "Board.h"
+#include <string>
 
 namespace move {
 	class Move {
 	public:
 		Move() = default;
-		virtual std::string getMovePgn() = 0;
+		virtual std::string getMoveICCF() = 0;
 		int xFrom;
 		int yFrom;
 		int xTo;
@@ -16,7 +16,6 @@ namespace move {
 	public:
 		NormalMove() = default;
 		NormalMove(int xFrom, int yFrom, int xTo, int yTo);
-		virtual std::string getMovePgn();
-		float evaluation;
+		virtual std::string getMoveICCF();
 	};
 }

@@ -10,7 +10,7 @@ board::Field::Field(int x, int y)
 void board::Field::setPiece(pieces::Piece piece)
 {
 	this->piece = piece;
-	this->isFieldEmpty = false;
+	this->isFieldEmpty = !piece.isReal;
 }
 
 pieces::Piece board::Field::getPiece()

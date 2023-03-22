@@ -1,5 +1,4 @@
 #include "Move.h"
-#include "Board.h"
 #include "Engine.h"
 
 move::NormalMove::NormalMove(int xFrom, int yFrom, int xTo, int yTo) {
@@ -10,8 +9,7 @@ move::NormalMove::NormalMove(int xFrom, int yFrom, int xTo, int yTo) {
 	this->yTo = yTo;
 }
 
-std::string move::NormalMove::getMovePgn() {
-	std::string alpha[8] = { "a", "b", "c", "d", "e", "f", "g", "h" };
+std::string move::NormalMove::getMoveICCF() {
 
-	return std::to_string(this->xFrom) + std::to_string(this->yFrom);
+	return std::to_string(this->xFrom) + std::to_string(this->yFrom) + std::to_string(this->xTo) + std::to_string(this->yTo);
 }

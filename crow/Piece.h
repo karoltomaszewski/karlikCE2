@@ -6,6 +6,7 @@ namespace pieces {
 	public:
 		Piece() = default;
 		bool isWhite = false;
+		bool isReal = true;
 		char pieceName;
 	};
 	
@@ -56,5 +57,12 @@ namespace pieces {
 	public:
 		King() = default;
 		King(char pieceName);
+	};
+
+	class NoPiece : public Piece
+	{
+	public:
+		NoPiece() = default;
+		NoPiece(char pieceName);
 	};
 }

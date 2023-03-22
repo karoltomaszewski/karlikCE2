@@ -3,6 +3,7 @@
 #include "Board.h"
 #include "FEN.h"
 #include<fstream>
+#include<vector>
 
 engine::Engine::Engine(std::string fen)
 {
@@ -15,15 +16,33 @@ std::string engine::Engine::findBestMove()
 {
 	tempBoard = board::Board(this->originalFen);
 
+	int depth = 0;
 	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition();
+	depth = 1;
 
+	double evaluation;
+	double maxEvaluation = -10000000;
+	std::string bestMove = "-";
 	std::string s = "";
-
+	std::ofstream zapis("dane.txt");
 	for (int i = 0; i < legalMoves.size(); i++) {
-		s += legalMoves[i]->getMovePgn() + '\n';
-	}
+		tempBoard.makeMove(legalMoves[i]);
+		evaluation = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1);
 
-	return s;
+		s += legalMoves[i]->getMoveICCF() + ": " + std::to_string(evaluation) + " ";
+
+		if (evaluation > maxEvaluation) {
+			maxEvaluation = evaluation;
+			bestMove = legalMoves[i]->getMoveICCF();
+		}
+
+		// revert
+		tempBoard = board::Board(this->originalFen);
+	}
+	zapis << s << std::endl;
+	zapis.close();
+
+	return bestMove;
 }
 
 std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
@@ -40,22 +59,26 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 
 					// ruch o 1 pole do przodu
 					if (tempBoard.isFieldEmpty(field.x, field.y + (1 * piece.isWhite ? 1 : -1))) {
+						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
+
 						if ((field.y == 2 && piece.isWhite) || (field.y == 7 && !piece.isWhite)) { // linia startowa
-							legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (1 * piece.isWhite ? 1 : -1)));
+							if (tempBoard.isFieldEmpty(field.x, field.y + (2 * piece.isWhite ? 1 : -1))) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
+							}
 						}
 						//boardAfterMove =  
 					}
 
 					// captures
-					/*
-					if (tempBoard.isFieldOccupiedByOpponentsPiece(field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1))) {
-
+					
+					if (tempBoard.isFieldValid(field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1)) && tempBoard.isFieldOccupiedByOpponentsPiece(field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1))) {
+						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1)));
 					}
 
-					if (tempBoard.isFieldOccupiedByOpponentsPiece(field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1))) {
-
+					if (tempBoard.isFieldValid(field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1)) && tempBoard.isFieldOccupiedByOpponentsPiece(field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1))) {
+						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1)));
 					}
-					*/
+					
 				}
 			}
 		}

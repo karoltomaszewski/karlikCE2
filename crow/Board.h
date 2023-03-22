@@ -3,6 +3,7 @@
 #include "FEN.h"
 #include "Piece.h"
 #include <vector>
+#include "Move.h"
 
 namespace board {
 	class Field {
@@ -30,9 +31,11 @@ namespace board {
 		bool isFieldEmpty(int x, int y);
 		bool isFieldOccupiedByOpponentsPiece(int x, int y);
 		FEN::FEN fen;
+		void makeMove(move::Move*);
+		double evaluate();
+		bool isFieldValid(int x, int y);
 	private:
 		void generateFields();
-		bool isFieldValid(int x, int y);
 		board::Field getField(int x, int y);
 	};
 }

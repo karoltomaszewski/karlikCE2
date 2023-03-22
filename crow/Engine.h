@@ -3,6 +3,8 @@
 #include <string>
 #include "FEN.h"
 #include "Move.h"
+#include <vector>
+#include "Board.h"
 
 namespace engine
 {
@@ -21,6 +23,12 @@ namespace engine
 		FEN::FEN fen;
 	};
 
+	class History
+	{
+	public:
+		std::vector<move::Move*> moves;
+	};
+
 	class Engine
 	{
 	public:
@@ -31,7 +39,11 @@ namespace engine
 		FEN::FEN originalFen;
 		std::string findBestMove();
 		std::vector<move::Move*> findAllLegalMovesOfPosition();
+		board::Board history;
+		int minDepth = 1;
 	private:
 		std::string originalColor;
 	};
+
+	
 }

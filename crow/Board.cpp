@@ -3,6 +3,7 @@
 #include "Piece.h"
 #include "Move.h"
 #include<fstream>
+#include "Engine.h"
 
 board::Board::Board(FEN::FEN fen) {
 	this->fen = fen;
@@ -23,7 +24,9 @@ void board::Board::generateFields() {
 		}
 		else if (helpers::Char::isNumeric(currentPosition[i])) {
 			for (int j = 0; j < helpers::Char::castToRealInt(currentPosition[i]); j++) {
-				this->fields.push_back(board::Field(columnNum, row));
+				board::Field newField = board::Field(columnNum, row);
+				newField.setPiece(pieces::PieceFactory::create('-'));
+				this->fields.push_back(newField);
 				columnNum++;
 			}
 		}
@@ -42,8 +45,6 @@ bool board::Board::isFieldValid(int x, int y) {
 }
 
 board::Field board::Board::getField(int x, int y) {
-	std::ofstream zapis("dane.txt");
-	zapis << this->fields.size();
 	return this->fields[(8 - y) * 8 + (x - 1)];
 }
 
@@ -56,15 +57,64 @@ bool board::Board::isFieldEmpty(int x, int y) {
 }
 
 bool board::Board::isFieldOccupiedByOpponentsPiece(int x, int y) {
-	if (this->isFieldValid(x, y)) {
-		return false;
-	}
-
 	if (this->isFieldEmpty(x, y)) {
 		return false;
 	}
 
-	pieces::Piece piece = this->fields[(y - 8) * 8 + (x - 1)].getPiece();
+	pieces::Piece piece = this->fields[(8 - y) * 8 + (x - 1)].getPiece();
 
-	return (this->fen.getColor() == FEN::FEN::COLOR_WHITE && piece.isWhite) || (this->fen.getColor() == FEN::FEN::COLOR_BLACK && !piece.isWhite);
+	return piece.isReal && (this->fen.getColor() == FEN::FEN::COLOR_WHITE && !piece.isWhite) || (this->fen.getColor() == FEN::FEN::COLOR_BLACK && piece.isWhite);
+}
+
+void board::Board::makeMove(move::Move* move) {
+	this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece());
+	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+}
+
+double board::Board::evaluate() {
+	double evaluation = 0.0;
+	
+	for (int i = 0; i < this->fields.size(); i++) {
+
+		char p = this->fields[i].getPiece().pieceName;
+;
+		if (p == 'p') {
+			evaluation -= engine::Evaluator::PAWN_BASIC_VALUE;
+		}
+		else if (p == 'b') {
+			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
+		}
+		else if (p == 'n') {
+			evaluation -= engine::Evaluator::KNIGH_BASIC_VALUE;
+		}
+		else if (p == 'r') {
+			evaluation -= engine::Evaluator::ROOK_BASIC_VALUE;
+		}
+		else if (p == 'q') {
+			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
+		} 
+		else if (p == 'k') {
+			evaluation -= 10000;
+		}
+		else if (p == 'P') {
+			evaluation += engine::Evaluator::PAWN_BASIC_VALUE;
+		}
+		else if (p == 'B') {
+			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
+		}
+		else if (p == 'N') {
+			evaluation += engine::Evaluator::KNIGH_BASIC_VALUE;
+		}
+		else if (p == 'R') {
+			evaluation += engine::Evaluator::ROOK_BASIC_VALUE;
+		}
+		else if (p == 'Q') {
+			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
+		}
+		else if (p == 'K') {
+			evaluation += 10000;
+		}
+	}
+
+	return evaluation;
 }
