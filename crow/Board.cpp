@@ -9,6 +9,7 @@ board::Board::Board(FEN::FEN fen) {
 	this->fen = fen;
 
 	this->generateFields();
+	this->colorOnMove = fen.getColor();
 }
 
 void board::Board::generateFields() {
@@ -63,12 +64,23 @@ bool board::Board::isFieldOccupiedByOpponentsPiece(int x, int y) {
 
 	pieces::Piece piece = this->fields[(8 - y) * 8 + (x - 1)].getPiece();
 
-	return piece.isReal && (this->fen.getColor() == FEN::FEN::COLOR_WHITE && !piece.isWhite) || (this->fen.getColor() == FEN::FEN::COLOR_BLACK && piece.isWhite);
+	return true;
+	//return piece.isReal && (this->colorOnMove == FEN::FEN::COLOR_WHITE && !piece.isWhite) || (this->colorOnMove == FEN::FEN::COLOR_BLACK && piece.isWhite);
+}
+
+bool board::Board::canCaptureOnField(int x, int y) {
+	if (this->isFieldEmpty(x, y)) {
+		return false;
+	}
+
+	return this->isFieldOccupiedByOpponentsPiece(x, y);
 }
 
 void board::Board::makeMove(move::Move* move) {
 	this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece());
 	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+
+	this->colorOnMove = (this->colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 }
 
 double board::Board::evaluate() {
@@ -76,7 +88,7 @@ double board::Board::evaluate() {
 	
 	for (int i = 0; i < this->fields.size(); i++) {
 
-		char p = this->fields[i].getPiece().pieceName;
+		char p = this->fields[i].pieceName;
 ;
 		if (p == 'p') {
 			evaluation -= engine::Evaluator::PAWN_BASIC_VALUE;

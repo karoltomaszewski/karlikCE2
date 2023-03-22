@@ -15,6 +15,7 @@ namespace board {
 		pieces::Piece getPiece();
 		int x;
 		int y;
+		char pieceName;
 	private:
 		pieces::Piece piece;
 	};
@@ -30,10 +31,12 @@ namespace board {
 		std::vector<Field> fields;
 		bool isFieldEmpty(int x, int y);
 		bool isFieldOccupiedByOpponentsPiece(int x, int y);
+		bool canCaptureOnField(int x, int y);
 		FEN::FEN fen;
 		void makeMove(move::Move*);
 		double evaluate();
 		bool isFieldValid(int x, int y);
+		std::string colorOnMove;
 	private:
 		void generateFields();
 		board::Field getField(int x, int y);

@@ -9,7 +9,7 @@ engine::Evaluator::Evaluator(std::string fen)
 const double engine::Evaluator::PAWN_BASIC_VALUE = 1;
 const double engine::Evaluator::KNIGH_BASIC_VALUE = 3;
 const double engine::Evaluator::BISHOP_BASIC_VALUE = 3.15;
-const double engine::Evaluator::ROOK_BASIC_VALUE = 5;
+const double engine::Evaluator::ROOK_BASIC_VALUE = 15;
 const double engine::Evaluator::QUEEN_BASIC_VALUE = 9;
 
 double engine::Evaluator::getBasicEvaluation()

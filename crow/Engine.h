@@ -35,6 +35,7 @@ namespace engine
 		Engine() = default;
 		Engine(std::string fen);
 		board::Board tempBoard;
+		std::string tempColor;
 		Evaluator evaluator;
 		FEN::FEN originalFen;
 		std::string findBestMove();

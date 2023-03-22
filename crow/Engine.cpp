@@ -10,6 +10,7 @@ engine::Engine::Engine(std::string fen)
 	this->evaluator = Evaluator(fen);
 	this->originalFen = FEN::FEN(fen);
 	this->originalColor = evaluator.fen.getColor();
+	this->tempColor = evaluator.fen.getColor();
 }
 
 std::string engine::Engine::findBestMove()
@@ -17,7 +18,7 @@ std::string engine::Engine::findBestMove()
 	tempBoard = board::Board(this->originalFen);
 
 	int depth = 0;
-	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition();
+	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(); // wszystkie depth 1
 	depth = 1;
 
 	double evaluation;
@@ -26,20 +27,61 @@ std::string engine::Engine::findBestMove()
 	std::string s = "";
 	std::ofstream zapis("dane.txt");
 	for (int i = 0; i < legalMoves.size(); i++) {
+		board::Board tb = tempBoard;
 		tempBoard.makeMove(legalMoves[i]);
-		evaluation = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1);
 
-		s += legalMoves[i]->getMoveICCF() + ": " + std::to_string(evaluation) + " ";
+		std::vector<move::Move*> lMoves = this->findAllLegalMovesOfPosition();
+		depth = 2;
 
-		if (evaluation > maxEvaluation) {
-			maxEvaluation = evaluation;
-			bestMove = legalMoves[i]->getMoveICCF();
+		s += legalMoves[i]->getMoveICCF() + "(" + std::to_string(tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1)) +"): \n";
+
+		for (int j = 0; j < lMoves.size(); j++) {
+			if (lMoves[j]->getMoveICCF() == "6455") {
+				s += "\n";
+
+				for (int q = 0; q < tempBoard.fields.size(); q++) {
+					if (q % 8 == 0) {
+						s += "\n";
+					}
+
+					s += tempBoard.fields[q].pieceName;
+				}
+
+				s += "\n";
+			}
+
+
+			tempBoard.makeMove(lMoves[j]);
+			evaluation = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1);
+			
+			s += "\t" + lMoves[j]->getMoveICCF() + " " + std::to_string(evaluation) + " \n";
+
+			if (lMoves[j]->getMoveICCF() == "6455") {
+				s += "\n";
+
+				for (int q = 0; q < tempBoard.fields.size(); q++) {
+					if (q % 8 == 0) {
+						s += "\n";
+					}
+
+					s += tempBoard.fields[q].pieceName;
+				}
+
+				s += "\n";
+			}
+
+			tempBoard = tb;
+
+			if (evaluation > maxEvaluation) {
+				maxEvaluation = evaluation;
+				bestMove = legalMoves[i]->getMoveICCF();
+			}
 		}
-
 		// revert
 		tempBoard = board::Board(this->originalFen);
 	}
-	zapis << s << std::endl;
+
+	zapis << s;
 	zapis.close();
 
 	return bestMove;
@@ -47,7 +89,7 @@ std::string engine::Engine::findBestMove()
 
 std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 	std::vector<move::Move*> legalMoves = {};
-	std::string color = tempBoard.fen.getColor();
+	std::string color = tempBoard.colorOnMove;
 
 	for (int i = 0; i < tempBoard.fields.size(); i++) {
 		board::Field field = tempBoard.fields[i];
@@ -71,14 +113,25 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 
 					// captures
 					
-					if (tempBoard.isFieldValid(field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1)) && tempBoard.isFieldOccupiedByOpponentsPiece(field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1))) {
+					if (tempBoard.canCaptureOnField(field.x - 1, field.y + (piece.isWhite ? 1 : -1))) {
 						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1)));
 					}
 
-					if (tempBoard.isFieldValid(field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1)) && tempBoard.isFieldOccupiedByOpponentsPiece(field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1))) {
+					if (tempBoard.canCaptureOnField(field.x + 1, field.y + (piece.isWhite ? 1 : -1))) {
 						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1)));
 					}
 					
+					// to do enpassant and promotion
+				}
+				else if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK) {
+					// w pionie do góry
+					for (int y = (field.y + 1); y<=8; y++) {
+						if (tempBoard.isFieldEmpty(field.x, y) || tempBoard.isFieldOccupiedByOpponentsPiece(field.x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+						}
+					}
+
+					// w poziomie
 				}
 			}
 		}
