@@ -31,65 +31,18 @@ std::string engine::Engine::findBestMove()
 		board::Board tb = board::Board(tempBoard); //w
 		tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 
-
-		/*
-		if (legalMoves[i]->getMoveICCF() == "5655") {
-			s += "\n";
-
-			for (int q = 0; q < tempBoard.fields.size(); q++) {
-				if (q % 8 == 0) {
-					s += "\n";
-				}
-
-				s += tempBoard.fields[q].pieceName;
-			}
-
-			s += "\n";
-		}
-		*/
-
 		std::vector<move::Move*> lMoves = this->findAllLegalMovesOfPosition();
 		depth = 2;
 
 		s += legalMoves[i]->getMoveICCF() + "(" + std::to_string(tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1)) +"): \n";
 
 		for (int j = 0; j < lMoves.size(); j++) {
-			/*if (lMoves[j]->getMoveICCF() == "6455") {
-				s += "\n";
-
-				for (int q = 0; q < tempBoard.fields.size(); q++) {
-					if (q % 8 == 0) {
-						s += "\n";
-					}
-
-					s += tempBoard.fields[q].pieceName;
-				}
-
-				s += "\n";
-			}*/
-
-
+		
 			tempBoard.makeMove(lMoves[j]); //b
 			evaluation = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1);
 			
 			s += "\t" + lMoves[j]->getMoveICCF() + " " + std::to_string(evaluation) + " \n";
 
-			/*
-			if (lMoves[j]->getMoveICCF() == "6455") {
-				s += "\n";
-
-				
-				for (int q = 0; q < tempBoard.fields.size(); q++) {
-					if (q % 8 == 0) {
-						s += "\n";
-					}
-
-					s += tempBoard.fields[q].pieceName;
-				}
-
-				s += "\n";
-			}
-			*/
 
 			if (evaluation > maxEvaluation) {
 				maxEvaluation = evaluation;
