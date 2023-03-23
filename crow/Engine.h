@@ -42,8 +42,10 @@ namespace engine
 		std::vector<move::Move*> findAllLegalMovesOfPosition();
 		board::Board history;
 		int minDepth = 1;
+		int tempDepth = 0;
 
 		double getMin();
+		double calculateMove(move::Move* move);
 	private:
 		std::string originalColor;
 	};
