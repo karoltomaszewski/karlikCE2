@@ -15,19 +15,27 @@ engine::Engine::Engine(std::string fen)
 
 double engine::Engine::calculateMove(move::Move* move)
 {
+	/*
 	std::ofstream outfile;
 
 	outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-	outfile << move->getMoveICCF() + " D" + std::to_string(tempDepth) + "\n";
+
+	std::string tabs = "";
+	for (int t = 0; t < (tempDepth-1); t++) {
+		tabs += "  ";
+	}
+
+	outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
 	outfile.close();
-
+	*/
+	
 	double evaluation;
-	double minEvaluation = 10000000;
+	double minEvaluation = 10000000.0;
 
+	board::Board tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
 
-	if (tempDepth < 25) {
-		board::Board tb = board::Board(tempBoard);
+	if (tempDepth < 6) {
 		tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 
 		std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition();
@@ -46,7 +54,18 @@ double engine::Engine::calculateMove(move::Move* move)
 		return minEvaluation;
 	}
 	else {
-		return tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1 : -1);
+		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+
+		double e = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+
+		/*
+		std::string tabs = "";
+		outfile << " " + std::to_string(e);
+		outfile.close();
+		*/
+
+		tempBoard = tb;
+		return e;
 	}
 	
 }
@@ -90,7 +109,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
 
 						if ((field.y == 2 && piece.isWhite) || (field.y == 7 && !piece.isWhite)) { // linia startowa
-							if (tempBoard.isFieldEmpty(field.x, field.y + (2 * piece.isWhite ? 1 : -1))) {
+							if (tempBoard.isFieldEmpty(field.x, field.y + (piece.isWhite ? 2 : -2))) {
 								legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
 							}
 						}
@@ -98,28 +117,148 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					}
 
 					// captures
-					/*
+					
 					if (tempBoard.canCaptureOnField(field.x - 1, field.y + (piece.isWhite ? 1 : -1))) {
-						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (1 * piece.isWhite ? 1 : -1)));
+						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
 					}
 
 					if (tempBoard.canCaptureOnField(field.x + 1, field.y + (piece.isWhite ? 1 : -1))) {
-						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (1 * piece.isWhite ? 1 : -1)));
+						legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));
 					}
-					*/
+					
 					
 					// to do enpassant and promotion
+					continue;
 				}
-				/*else if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK) {
+				
+				// pion i poziom - wie¿a i hetman
+				if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
 					// w pionie do góry
 					for (int y = (field.y + 1); y<=8; y++) {
-						if (tempBoard.isFieldEmpty(field.x, y) || tempBoard.isFieldOccupiedByOpponentsPiece(field.x, y)) {
+						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
+						if (isEmpty || tempBoard.canCaptureOnField(field.x, y)) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
 						}
 					}
 
-					// w poziomie
-				}*/
+					// w pionie w dó³
+					for (int y = (field.y - 1); y >= 1; y--) {
+						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
+						if (isEmpty || tempBoard.canCaptureOnField(field.x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
+						}
+					}
+
+					// w poziomie w lewo
+					for (int x = (field.x - 1); x >= 1; x--) {
+						bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
+						if (isEmpty || tempBoard.canCaptureOnField(x, field.y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
+						}
+					}
+
+					// w poziomie w prawo
+					for (int x = (field.x + 1); x <= 8; x++) {
+						bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
+						if (isEmpty || tempBoard.canCaptureOnField(x, field.y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
+						}
+					}
+
+					if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK) {
+						continue;
+					}
+				}
+
+				
+				// skos - goniec i hetman
+				if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
+					// w lewy górny
+					for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
+						bool isEmpty = tempBoard.isFieldEmpty(x, y);
+						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
+						}
+
+
+						x--;
+						y++;
+					}
+
+					// w prawy górny
+					for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
+						bool isEmpty = tempBoard.isFieldEmpty(x, y);
+						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
+						}
+
+
+						x++;
+						y++;
+					}
+
+					// w lewy dolny
+					for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
+						bool isEmpty = tempBoard.isFieldEmpty(x, y);
+						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
+						}
+
+
+						x--;
+						y--;
+					}
+
+					// w prawy dolny
+					for (int x = (field.x + 1), y = (field.y - 1); (x <=8 && y >= 1);) {
+						bool isEmpty = tempBoard.isFieldEmpty(x, y);
+						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+						}
+						else if (!isEmpty) { // blocked by my piece
+							break;
+						}
+
+
+						x++;
+						y--;
+					}
+
+					continue;
+				}
+
+				// skoczek
+
+				if (piece.pieceName == FEN::FEN::KNIGHT_BLACK || piece.pieceName == FEN::FEN::KNIGHT_WHITE) {
+					for (int km = 0; km < this->knightMoves.size(); km++) {
+						int x = field.x + this->knightMoves[km][0];
+						int y = field.y + this->knightMoves[km][1];
+						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+						}
+					}
+				}
 			}
 		}
 	}

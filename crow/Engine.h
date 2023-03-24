@@ -48,6 +48,9 @@ namespace engine
 		double calculateMove(move::Move* move);
 	private:
 		std::string originalColor;
+		std::vector<std::vector<int>> knightMoves = {
+			{-1, 2}, {1, 2}, {2, -1}, {2, 1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}
+		};
 	};
 
 	

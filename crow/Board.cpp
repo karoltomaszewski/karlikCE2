@@ -68,6 +68,10 @@ bool board::Board::isFieldOccupiedByOpponentsPiece(int x, int y) {
 }
 
 bool board::Board::canCaptureOnField(int x, int y) {
+	if (!this->isFieldValid(x, y)) {
+		return false;
+	}
+
 	if (this->isFieldEmpty(x, y)) {
 		return false;
 	}
@@ -80,15 +84,35 @@ void board::Board::makeMove(move::Move* move) {
 	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
 }
 
-double board::Board::evaluate() {
+double board::Board::evaluate(std::string originalColor) {
 	double evaluation = 0.0;
-	
+	int x = 0;
+	int y = 8;
+
+
 	for (int i = 0; i < this->fields.size(); i++) {
+		x = (i % 8) + 1;
+		y = 8 - (i / 8);
 
 		char p = this->fields[i].pieceName;
 ;
 		if (p == 'p') {
 			evaluation -= engine::Evaluator::PAWN_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation -= 0.1;
+				if (originalColor == FEN::FEN::COLOR_BLACK) {
+					evaluation -= 0.0001;
+				}
+
+				// 4 najbardziej centralne pola na planszy
+				if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
+					evaluation -= 0.1;
+					if (originalColor == FEN::FEN::COLOR_BLACK) {
+						evaluation -= 0.0001;
+					}
+				}
+			}
 		}
 		else if (p == 'b') {
 			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
@@ -107,6 +131,21 @@ double board::Board::evaluate() {
 		}
 		else if (p == 'P') {
 			evaluation += engine::Evaluator::PAWN_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation += 0.1;
+				if (originalColor == FEN::FEN::COLOR_WHITE) {
+					evaluation += 0.0001;
+				}
+
+				// 4 najbardziej centralne pola na planszy
+				if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
+					evaluation += 0.1;
+					if (originalColor == FEN::FEN::COLOR_WHITE) {
+						evaluation += 0.0001;
+					}
+				}
+			}
 		}
 		else if (p == 'B') {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;

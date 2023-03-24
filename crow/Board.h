@@ -35,7 +35,7 @@ namespace board {
 		bool canCaptureOnField(int x, int y);
 		FEN::FEN fen;
 		void makeMove(move::Move*);
-		double evaluate();
+		double evaluate(std::string originalColor);
 		bool isFieldValid(int x, int y);
 		std::string colorOnMove;
 	private:
