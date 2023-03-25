@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace pieces {
 	class Piece
@@ -14,6 +15,7 @@ namespace pieces {
 	{
 	public:
 		static Piece create(char pieceName);
+		static Piece create(int promotionCode, std::string color);
 	};
 
 	class Pawn : public Piece 

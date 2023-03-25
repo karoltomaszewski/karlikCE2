@@ -80,8 +80,16 @@ bool board::Board::canCaptureOnField(int x, int y) {
 }
 
 void board::Board::makeMove(move::Move* move) {
-	this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece());
-	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+	if (move->getType() == "normal") {
+		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece());
+		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+	}
+	else if (move->getType() == "promotion") {
+		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(pieces::PieceFactory::create(move->promotionCode, this->colorOnMove));
+
+		//this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(pieces::PieceFactory::create(move->promotionCode, this->colorOnMove));
+		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+	}
 }
 
 double board::Board::evaluate(std::string originalColor) {

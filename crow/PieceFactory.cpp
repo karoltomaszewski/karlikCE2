@@ -26,6 +26,20 @@ pieces::Piece pieces::PieceFactory::create(char pieceName)
 	return pieces::King(pieceName);
 }
 
+pieces::Piece pieces::PieceFactory::create(int promotionCode, std::string color)
+{
+	if (promotionCode == 1) {
+		return color == FEN::FEN::COLOR_WHITE ? pieces::Queen('Q') : pieces::Queen('q');
+	}
+	else if (promotionCode == 2) {
+		return color == FEN::FEN::COLOR_WHITE ? pieces::Rook('R') : pieces::Rook('r');
+	}
+	else if (promotionCode == 3) {
+		return color == FEN::FEN::COLOR_WHITE ? pieces::Bishop('B') : pieces::Bishop('b');
+	}
+
+	return color == FEN::FEN::COLOR_WHITE ? pieces::Knight('N') : pieces::Knight('n');
+}
 
 pieces::Pawn::Pawn(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::PAWN_WHITE;

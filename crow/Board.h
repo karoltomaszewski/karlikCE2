@@ -38,8 +38,9 @@ namespace board {
 		double evaluate(std::string originalColor);
 		bool isFieldValid(int x, int y);
 		std::string colorOnMove;
+		board::Field getField(int x, int y);
+
 	private:
 		void generateFields();
-		board::Field getField(int x, int y);
 	};
 }

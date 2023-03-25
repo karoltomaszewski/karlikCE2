@@ -149,6 +149,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NormalMove.cpp" />
     <ClCompile Include="PieceFactory.cpp" />
+    <ClCompile Include="PromotionMove.cpp" />
     <ClCompile Include="String.cpp" />
   </ItemGroup>
   <ItemGroup>

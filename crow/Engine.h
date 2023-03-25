@@ -20,6 +20,9 @@ namespace engine
 		static const double BISHOP_BASIC_VALUE;
 		static const double ROOK_BASIC_VALUE;
 		static const double QUEEN_BASIC_VALUE;
+
+		static const double CODE_NO_MORE_MOVE;
+		static const double CODE_WINS_KING;
 		FEN::FEN fen;
 	};
 
@@ -38,8 +41,16 @@ namespace engine
 		std::string tempColor;
 		Evaluator evaluator;
 		FEN::FEN originalFen;
-		std::string findBestMove();
+
+		struct bestMoveStructure {
+			std::string notation;
+			double evaluation;
+		};
+
+		bestMoveStructure findBestMove();
 		std::vector<move::Move*> findAllLegalMovesOfPosition();
+		bool isCheck();
+
 		board::Board history;
 		int minDepth = 1;
 		int tempDepth = 0;

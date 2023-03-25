@@ -22,9 +22,9 @@ int main()
 
         engine::Engine engine(f);
 
-        std::string s = engine.findBestMove();
+        engine::Engine::bestMoveStructure s = engine.findBestMove();
 
-        return crow::response(s);
+        return crow::response("{\nmove: " + s.notation + ", \nevaluation: " + std::to_string(s.evaluation) + "\n}");
     });
 
     //set the port, set the app to run on multiple threads, and run the app

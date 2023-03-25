@@ -12,6 +12,9 @@ const double engine::Evaluator::BISHOP_BASIC_VALUE = 3.15;
 const double engine::Evaluator::ROOK_BASIC_VALUE = 5;
 const double engine::Evaluator::QUEEN_BASIC_VALUE = 9;
 
+const double engine::Evaluator::CODE_NO_MORE_MOVE = 80000;
+const double engine::Evaluator::CODE_WINS_KING = 81000;
+
 double engine::Evaluator::getBasicEvaluation()
 {
 	int whiteEvaluation = helpers::String::countOccurances(FEN::FEN::PAWN_WHITE, this->fen.getPosition()) * this->PAWN_BASIC_VALUE
