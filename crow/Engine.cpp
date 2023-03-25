@@ -31,11 +31,12 @@ double engine::Engine::calculateMove(move::Move* move)
 	
 	double evaluation;
 	double minEvaluation = 10000000.0;
+	double maxEvaluation = -10000000.0;
 
 	board::Board tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
 
-	if (tempDepth < 6) {
+	if (tempDepth < 4) {
 		tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 
 		std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition();
@@ -44,14 +45,22 @@ double engine::Engine::calculateMove(move::Move* move)
 		for (int i = 0; i < legalMoves.size(); i++) {
 			evaluation = calculateMove(legalMoves[i]);
 
-			if (evaluation < minEvaluation) {
-				minEvaluation = evaluation;
+			if (tempDepth % 2 == 0) {
+				if (evaluation < minEvaluation) {
+					minEvaluation = evaluation;
+				}
 			}
+			else {
+				if (evaluation > maxEvaluation) {
+					maxEvaluation = evaluation;
+				}
+			}
+			
 		}
 
 		tempBoard = tb;
 		tempDepth--;
-		return minEvaluation;
+		return tempDepth % 2 == 0 ? maxEvaluation : minEvaluation; // linijke wyzej odejmmuje tempDepth!!!
 	}
 	else {
 		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
@@ -136,10 +145,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w pionie do góry
 					for (int y = (field.y + 1); y<=8; y++) {
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
-						if (isEmpty || tempBoard.canCaptureOnField(field.x, y)) {
+
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(field.x, y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+							}
+
 							break;
 						}
 					}
@@ -147,10 +161,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w pionie w dó³
 					for (int y = (field.y - 1); y >= 1; y--) {
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
-						if (isEmpty || tempBoard.canCaptureOnField(field.x, y)) {
+
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(field.x, y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+							}
+
 							break;
 						}
 					}
@@ -158,10 +177,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w poziomie w lewo
 					for (int x = (field.x - 1); x >= 1; x--) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
-						if (isEmpty || tempBoard.canCaptureOnField(x, field.y)) {
+
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(x, field.y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+							}
+
 							break;
 						}
 					}
@@ -169,10 +193,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w poziomie w prawo
 					for (int x = (field.x + 1); x <= 8; x++) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
-						if (isEmpty || tempBoard.canCaptureOnField(x, field.y)) {
+
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(x, field.y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+							}
+
 							break;
 						}
 					}
@@ -188,13 +217,17 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w lewy górny
 					for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
-						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(x, y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+							}
+
 							break;
 						}
-
 
 						x--;
 						y++;
@@ -203,10 +236,14 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w prawy górny
 					for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
-						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(x, y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+							}
+
 							break;
 						}
 
@@ -218,10 +255,14 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w lewy dolny
 					for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
-						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(x, y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+							}
+
 							break;
 						}
 
@@ -233,10 +274,14 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					// w prawy dolny
 					for (int x = (field.x + 1), y = (field.y - 1); (x <=8 && y >= 1);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
-						if (isEmpty || tempBoard.canCaptureOnField(x, y)) {
+						if (isEmpty) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
-						else if (!isEmpty) { // blocked by my piece
+						else {
+							if (tempBoard.canCaptureOnField(x, y)) {
+								legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+							}
+
 							break;
 						}
 
@@ -254,6 +299,18 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					for (int km = 0; km < this->knightMoves.size(); km++) {
 						int x = field.x + this->knightMoves[km][0];
 						int y = field.y + this->knightMoves[km][1];
+						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
+							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+						}
+					}
+				}
+
+				// król
+
+				if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
+					for (int km = 0; km < this->kingMoves.size(); km++) {
+						int x = field.x + this->kingMoves[km][0];
+						int y = field.y + this->kingMoves[km][1];
 						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
 							legalMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
