@@ -11,6 +11,7 @@ namespace FEN
 		std::string getRawFen();
 		std::string getPosition();
 		std::string getColor();
+		std::string getCastleInfo();
 		std::string rawFen;
 
 		static const char PAWN_WHITE;

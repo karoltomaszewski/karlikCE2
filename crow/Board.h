@@ -18,6 +18,7 @@ namespace board {
 		char pieceName;
 	private:
 		pieces::Piece piece;
+
 	};
 
 	class Board {
@@ -28,6 +29,10 @@ namespace board {
 			fields = board.fields;
 			fen = board.fen;
 			colorOnMove = board.colorOnMove;
+			canWhiteKingCastle = board.canWhiteKingCastle;
+			canWhiteQueenCastle = board.canWhiteQueenCastle;
+			canBlackKingCastle = board.canBlackKingCastle;
+			canBlackQueenCastle = board.canBlackQueenCastle;
 		}
 		std::vector<Field> fields;
 		bool isFieldEmpty(int x, int y);
@@ -40,6 +45,10 @@ namespace board {
 		std::string colorOnMove;
 		board::Field getField(int x, int y);
 
+		bool canWhiteKingCastle;
+		bool canWhiteQueenCastle;
+		bool canBlackKingCastle;
+		bool canBlackQueenCastle;
 	private:
 		void generateFields();
 	};

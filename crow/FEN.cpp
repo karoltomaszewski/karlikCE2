@@ -39,6 +39,11 @@ std::string FEN::FEN::getColor()
 	return this->getNthSegment(2);
 }
 
+std::string FEN::FEN::getCastleInfo()
+{
+	return this->getNthSegment(3);
+}
+
 
 // private
 
