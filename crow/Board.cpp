@@ -112,27 +112,65 @@ double board::Board::evaluate(std::string originalColor) {
 				if (originalColor == FEN::FEN::COLOR_BLACK) {
 					evaluation -= 0.0001;
 				}
-
+				
 				// 4 najbardziej centralne pola na planszy
 				if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
 					evaluation -= 0.1;
-					if (originalColor == FEN::FEN::COLOR_BLACK) {
-						evaluation -= 0.0001;
+				}
+
+				evaluation -= 0.05 * (7 - y);
+
+				for (int posY = y - 1; posY > 1; posY--) {
+					if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_BLACK) { // zdublowane pionki
+						evaluation += 0.5;
+						break;
+					}
+				}
+
+				if (x != 1) {
+					pieces::Piece pieceOnAttackedField = this->getField(x - 1, y).getPiece();
+					if (pieceOnAttackedField1.isReal && pieceOnAttackedField1.pieceName != FEN::FEN::PAWN_WHITE) {
+						// bonus za atakowanie pionkiem figury
+						evaluation -= 0.1;
+					}
+				}
+
+				if (x != 8) {
+					pieces::Piece pieceOnAttackedField = this->getField(x + 1, y).getPiece();
+					if (pieceOnAttackedField1.isReal && pieceOnAttackedField1.pieceName != FEN::FEN::PAWN_WHITE) {
+						// bonus za atakowanie pionkiem figury
+						evaluation -= 0.1;
 					}
 				}
 			}
 		}
 		else if (p == 'b') {
 			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation -= 0.2;
+			}
 		}
 		else if (p == 'n') {
 			evaluation -= engine::Evaluator::KNIGH_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation -= 0.2;
+			}
 		}
 		else if (p == 'r') {
 			evaluation -= engine::Evaluator::ROOK_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation -= 0.2;
+			}
 		}
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation -= 0.2;
+			}
 		} 
 		else if (p == 'k') {
 			evaluation -= 10000;
@@ -140,32 +178,47 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'P') {
 			evaluation += engine::Evaluator::PAWN_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+			// 4 najbardziej centralne pola na planszy
+			if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
 				evaluation += 0.1;
-				if (originalColor == FEN::FEN::COLOR_WHITE) {
-					evaluation += 0.0001;
-				}
+			}
 
-				// 4 najbardziej centralne pola na planszy
-				if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
-					evaluation += 0.1;
-					if (originalColor == FEN::FEN::COLOR_WHITE) {
-						evaluation += 0.0001;
-					}
+			evaluation += 0.05 * (y - 2);
+
+			for (int posY = y + 1; posY < 8; posY++) {
+				if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_WHITE) { // zdublowane pionki
+					evaluation -= 0.5;
+					break;
 				}
 			}
 		}
 		else if (p == 'B') {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation += 0.2;
+			}
 		}
 		else if (p == 'N') {
 			evaluation += engine::Evaluator::KNIGH_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation += 0.2;
+			}
 		}
 		else if (p == 'R') {
 			evaluation += engine::Evaluator::ROOK_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation += 0.2;
+			}
 		}
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
+
+			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+				evaluation += 0.2;
+			}
 		}
 		else if (p == 'K') {
 			evaluation += 10000;

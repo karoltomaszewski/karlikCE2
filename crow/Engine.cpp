@@ -15,7 +15,8 @@ engine::Engine::Engine(std::string fen)
 
 double engine::Engine::calculateMove(move::Move* move)
 {
-	/*std::ofstream outfile;
+	/*
+	std::ofstream outfile;
 
 	outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
 
@@ -25,8 +26,8 @@ double engine::Engine::calculateMove(move::Move* move)
 	}
 
 	outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
-	outfile.close();*/
-	
+	outfile.close();
+	*/
 	
 	double evaluation;
 	double minEvaluation = 10000000.0;
@@ -39,12 +40,6 @@ double engine::Engine::calculateMove(move::Move* move)
 		tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 
 		double dummyEvalOfPosition = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
-		if (tempDepth % 2 != 0) { 
-			if (dummyEvalOfPosition > 9900 && dummyEvalOfPosition < 10100) { // zbity król przeciwnika
-				tempBoard = tb;
-				return Evaluator::CODE_WINS_KING;
-			}
-		}
 
 		std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition();
 		tempDepth++;
@@ -53,9 +48,6 @@ double engine::Engine::calculateMove(move::Move* move)
 			evaluation = calculateMove(legalMoves[i]);
 
 			if (tempDepth % 2 == 0) { // ruch przeciwnika
-				if (evaluation == Evaluator::CODE_WINS_KING) {
-					return evaluation;
-				}
 
 				if (evaluation < minEvaluation) {
 					minEvaluation = evaluation;
