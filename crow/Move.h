@@ -28,6 +28,13 @@ namespace move {
 		PromotionMove(int xFrom, int yFrom, int xTo, int yTo, int promotionCode);
 		virtual std::string getMoveICCF();
 		virtual std::string getType() { return "promotion"; };
+	};
 
+	class CastleMove : public Move {
+	public:
+		CastleMove() = default;
+		CastleMove(int xFrom, int yFrom, int xTo, int yTo);
+		virtual std::string getMoveICCF();
+		virtual std::string getType() { return "castle"; };
 	};
 }

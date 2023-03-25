@@ -90,14 +90,10 @@ void board::Board::makeMove(move::Move* move) {
 	if (move->getType() == "normal") {
 		if (movedPiece.pieceName == FEN::FEN::KING_WHITE) {
 			this->canWhiteKingCastle = false;
-		}
-		else if (movedPiece.pieceName == FEN::FEN::QUEEN_WHITE) {
 			this->canWhiteQueenCastle = false;
 		}
 		else if (movedPiece.pieceName == FEN::FEN::KING_BLACK) {
 			this->canBlackKingCastle = false;
-		}
-		else if (movedPiece.pieceName == FEN::FEN::QUEEN_BLACK) {
 			this->canBlackQueenCastle = false;
 		}
 		else if (movedPiece.pieceName == FEN::FEN::ROOK_WHITE) {
@@ -121,9 +117,34 @@ void board::Board::makeMove(move::Move* move) {
 	}
 	else if (move->getType() == "promotion") {
 		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(pieces::PieceFactory::create(move->promotionCode, this->colorOnMove));
-
-		//this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(pieces::PieceFactory::create(move->promotionCode, this->colorOnMove));
 		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+	}
+	else if (move->getType() == "castle") {
+		if (colorOnMove == FEN::FEN::COLOR_WHITE) {
+			this->canWhiteKingCastle = false;
+			this->canWhiteQueenCastle = false;
+		}
+		else {
+			this->canBlackKingCastle = false;
+			this->canBlackQueenCastle = false;
+		}
+
+		// ustawienie króla w dobrym miejscu
+		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
+
+		// wyczyszczenie pola na którym sta³ król
+		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+
+		// ustawienie wie¿y w dobrym miejscu
+		this->fields[(8 - move->yTo) * 8 + (((move->xTo + move->xFrom) / 2) - 1)].setPiece(movedPiece);
+
+		// wyczyszczenie pola na którym sta³a wie¿a
+		if (move->xTo == 3) {
+			this->fields[(8 - move->yFrom) * 8].setPiece(pieces::NoPiece('-'));
+		}
+		else {
+			this->fields[(8 - move->yFrom) * 8 + 7].setPiece(pieces::NoPiece('-'));
+		}
 	}
 }
 

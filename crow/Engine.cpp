@@ -15,7 +15,6 @@ engine::Engine::Engine(std::string fen)
 
 double engine::Engine::calculateMove(move::Move* move)
 {
-	/*
 	std::ofstream outfile;
 
 	outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
@@ -27,7 +26,6 @@ double engine::Engine::calculateMove(move::Move* move)
 
 	outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
 	outfile.close();
-	*/
 	
 	double evaluation;
 	double minEvaluation = 10000000.0;
@@ -113,6 +111,67 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 	std::vector<move::Move*> legalMoves = {};
 	std::vector<move::Move*> possibleMoves = {};
 	std::string color = tempBoard.colorOnMove;
+
+
+	// roszady 
+
+	if (!isCheck()) {
+		if (color == FEN::FEN::COLOR_WHITE) { // sprawdza czy król nie jest szachowany
+			if (tempBoard.canWhiteKingCastle) {
+				if (!tempBoard.getField(6, 1).getPiece().isReal && !tempBoard.getField(7, 1).getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
+					board::Board tb = tempBoard;
+					tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
+					tempBoard.makeMove(new move::NormalMove(5, 1, 6, 1)); // sprawdzanie czy pole przez które musi przejœæ król nie jest szachowane
+					if (!isCheck()) { 
+						possibleMoves.push_back(new move::CastleMove(5, 1, 7, 1)); // czy po roszadzie nie ma szacha sprawdzi siê podczas przechodzenia z possible do legal
+					}
+
+					tempBoard = tb;
+				}
+			}
+
+			if (tempBoard.canWhiteQueenCastle) {
+				if (!tempBoard.getField(4, 1).getPiece().isReal && !tempBoard.getField(3, 1).getPiece().isReal && !tempBoard.getField(2,1).getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
+					board::Board tb = tempBoard;
+					tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
+					tempBoard.makeMove(new move::NormalMove(5, 1, 4, 1));
+					if (!isCheck()) { // sprawdza czy król po ruchu nie bêdzie szachowany
+						possibleMoves.push_back(new move::CastleMove(5, 1, 3 , 1));
+					}
+
+					tempBoard = tb;
+				}
+			}
+		}
+		else {
+			if (tempBoard.canBlackKingCastle) {
+				if (!tempBoard.getField(6, 8).getPiece().isReal && !tempBoard.getField(7, 8).getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
+					board::Board tb = tempBoard;
+					tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
+					tempBoard.makeMove(new move::NormalMove(5, 8, 6, 8));
+					if (!isCheck()) { // sprawdza czy król po ruchu nie bêdzie szachowany
+						legalMoves.push_back(new move::CastleMove(5, 8, 7, 8));
+					}
+
+					tempBoard = tb;
+				}
+			}
+
+			if (tempBoard.canBlackQueenCastle) {
+				if (!tempBoard.getField(4, 8).getPiece().isReal && !tempBoard.getField(3, 8).getPiece().isReal && !tempBoard.getField(2, 8).getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
+					board::Board tb = tempBoard;
+					tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
+					tempBoard.makeMove(new move::NormalMove(5, 8, 4, 8));
+					if (!isCheck()) { // sprawdza czy król po ruchu nie bêdzie szachowany
+						legalMoves.push_back(new move::CastleMove(5, 8, 3, 8));
+					}
+
+					tempBoard = tb;
+				}
+			}
+		}
+		
+	}
 
 	for (int i = 0; i < tempBoard.fields.size(); i++) {
 		board::Field field = tempBoard.fields[i];
@@ -363,14 +422,14 @@ bool engine::Engine::isCheck() {
 		pieces::Piece piece = field.getPiece();
 
 
-		/*if (
+		if (
 			(piece.pieceName == FEN::FEN::PAWN_WHITE && tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) ||
 			(piece.pieceName == FEN::FEN::PAWN_BLACK && tempBoard.colorOnMove == FEN::FEN::COLOR_BLACK)
 		) {
-			bool isEmpty = tempBoard.isFieldEmpty(field.x - 1, field.y);
+			bool isEmpty = tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 1 : -1));
 
-			if (!isEmpty && tempBoard.isFieldValid(field.x - 1, field.y)) {
-				char pieceOnField = tempBoard.getField(field.x - 1, field.y).getPiece().pieceName;
+			if (!isEmpty && tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 1 : -1))) {
+				char pieceOnField = tempBoard.getField(field.x - 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().pieceName;
 
 				if (
 					(pieceOnField == FEN::FEN::KING_BLACK && tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) ||
@@ -381,10 +440,10 @@ bool engine::Engine::isCheck() {
 			}
 			
 
-			isEmpty = tempBoard.isFieldEmpty(field.x + 1, field.y);
+			isEmpty = tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 1 : -1));
 
-			if (!isEmpty && tempBoard.isFieldValid(field.x + 1, field.y)) {
-				char pieceOnField = tempBoard.getField(field.x + 1, field.y).getPiece().pieceName;
+			if (!isEmpty && tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 1 : -1))) {
+				char pieceOnField = tempBoard.getField(field.x + 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().pieceName;
 
 				if (
 					(pieceOnField == FEN::FEN::KING_BLACK && tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) ||
@@ -396,7 +455,6 @@ bool engine::Engine::isCheck() {
 
 			continue;
 		}
-		*/
 
 		if (
 			((piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::ROOK_WHITE) && tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) ||

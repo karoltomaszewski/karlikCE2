@@ -141,6 +141,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Board.cpp" />
+    <ClCompile Include="CastleMove.cpp" />
     <ClCompile Include="Char.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Evaluator.cpp" />
