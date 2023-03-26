@@ -49,14 +49,16 @@ namespace engine
 
 		bestMoveStructure findBestMove();
 		std::vector<move::Move*> findAllLegalMovesOfPosition();
-		bool isCheck();
+		bool isCheck(std::string onColor);
 
 		board::Board history;
 		int minDepth = 1;
 		int tempDepth = 0;
 
 		double getMin();
-		double calculateMove(move::Move* move);
+		double calculateMove(
+			move::Move* move
+		);
 	private:
 		std::string originalColor;
 		std::vector<std::vector<int>> knightMoves = {

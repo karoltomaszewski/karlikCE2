@@ -201,6 +201,22 @@ double board::Board::evaluate(std::string originalColor) {
 					}
 				}
 
+				bool isSemiPassedPawn = true; // semi passed pawn - pion, który na swojej drodze nie mo¿e zostaæ zablokowany ani zbity przez pionka
+				for (int posY = y - 1; posY > 1; posY--) {
+					if (
+						!this->getField(x, posY).getPiece().isReal ||
+						(this->isFieldValid(x - 1, posY - 1) && this->getField(x - 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) ||
+						(this->isFieldValid(x + 1, posY - 1) && this->getField(x + 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE)
+						) {
+						isSemiPassedPawn = false;
+						break;
+					}
+				}
+
+				if (isSemiPassedPawn) {
+					evaluation -= 0.75 * (7 - y);
+				}
+
 				if (x != 1) {
 					pieces::Piece pieceOnAttackedField = this->getField(x - 1, y - 1).getPiece();
 					if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_WHITE) {
@@ -266,11 +282,27 @@ double board::Board::evaluate(std::string originalColor) {
 				}
 			}
 
+			bool isSemiPassedPawn = true;
+			for (int posY = y + 1; posY < 8; posY++) {
+				if (
+					!this->getField(x, posY).getPiece().isReal ||
+					(this->isFieldValid(x - 1, posY + 1) && this->getField(x - 1, posY + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) ||
+					(this->isFieldValid(x + 1, posY + 1) && this->getField(x + 1, posY + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
+				) {
+					isSemiPassedPawn = false;
+					break;
+				}
+			}
+
+			if (isSemiPassedPawn) {
+				evaluation += 0.75 * (y - 2);
+			}
+
 			if (x != 1) {
 				pieces::Piece pieceOnAttackedField = this->getField(x - 1, y + 1).getPiece();
 				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_BLACK) {
 					// bonus za atakowanie pionkiem figury
-					evaluation -= 0.1;
+					evaluation += 0.1;
 				}
 			}
 
@@ -278,7 +310,7 @@ double board::Board::evaluate(std::string originalColor) {
 				pieces::Piece pieceOnAttackedField = this->getField(x + 1, y + 1).getPiece();
 				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_BLACK) {
 					// bonus za atakowanie pionkiem figury
-					evaluation -= 0.1;
+					evaluation += 0.1;
 				}
 			}
 		}
