@@ -136,7 +136,7 @@ void board::Board::makeMove(move::Move* move) {
 		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
 
 		// ustawienie wie¿y w dobrym miejscu
-		this->fields[(8 - move->yTo) * 8 + (((move->xTo + move->xFrom) / 2) - 1)].setPiece(movedPiece);
+		this->fields[(8 - move->yTo) * 8 + (((move->xTo + move->xFrom) / 2) - 1)].setPiece(pieces::Rook(colorOnMove == FEN::FEN::COLOR_WHITE ? 'R' : 'r'));
 
 		// wyczyszczenie pola na którym sta³a wie¿a
 		if (move->xTo == 3) {
@@ -237,23 +237,59 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'b') {
 			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation -= 0.2;
+			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
+				evaluation -= 0.1;
+				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+					evaluation -= 0.2;
+				}
 			}
 		}
 		else if (p == 'n') {
 			evaluation -= engine::Evaluator::KNIGH_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation -= 0.2;
+			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
+				evaluation -= 0.1;
+				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+					evaluation -= 0.2;
+				}
 			}
+			
 		}
 		else if (p == 'r') {
 			evaluation -= engine::Evaluator::ROOK_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation -= 0.2;
+			int attackedFieldsX = 0;
+			int attackedFieldsY = 0;
+			for (int posX = x - 1; posX > 0; posX--) {
+				attackedFieldsX++;
+				if (!this->getField(posX, y).isFieldEmpty) {
+					break;
+				}
 			}
+			for (int posX = x + 1; posX < 9; posX++) {
+				attackedFieldsX++;
+				if (!this->getField(posX, y).isFieldEmpty) {
+					break;
+				}
+			}
+			for (int posY = y - 1; posY > 0; posY--) {
+				attackedFieldsY++;
+				if (!this->getField(x, posY).isFieldEmpty) {
+					break;
+				}
+			}
+			for (int posY = y + 1; posY < 9; posY++) {
+				attackedFieldsY++;
+				if (!this->getField(x, posY).isFieldEmpty) {
+					break;
+				}
+			}
+
+			if (attackedFieldsY == 7) {
+				evaluation -= 0.9;
+			}
+
+			evaluation -= (attackedFieldsX + attackedFieldsY) * 0.06;
 		}
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
@@ -317,23 +353,58 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'B') {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation += 0.2;
+			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
+				evaluation += 0.1;
+				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+					evaluation += 0.2;
+				}
 			}
+
 		}
 		else if (p == 'N') {
 			evaluation += engine::Evaluator::KNIGH_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation += 0.2;
+			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
+				evaluation += 0.1;
+				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
+					evaluation += 0.2;
+				}
 			}
 		}
 		else if (p == 'R') {
 			evaluation += engine::Evaluator::ROOK_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation += 0.2;
+			int attackedFieldsX = 0;
+			int attackedFieldsY = 0;
+			for (int posX = x - 1; posX > 0; posX--) {
+				attackedFieldsX++;
+				if (!this->getField(posX, y).isFieldEmpty) {
+					break;
+				}
 			}
+			for (int posX = x + 1; posX < 9; posX++) {
+				attackedFieldsX++;
+				if (!this->getField(posX, y).isFieldEmpty) {
+					break;
+				}
+			}
+			for (int posY = y - 1; posY > 0; posY--) {
+				attackedFieldsY++;
+				if (!this->getField(x, posY).isFieldEmpty) {
+					break;
+				}
+			}
+			for (int posY = y + 1; posY < 9; posY++) {
+				attackedFieldsY++;
+				if (!this->getField(x, posY).isFieldEmpty) {
+					break;
+				}
+			}
+
+			if (attackedFieldsY == 7) {
+				evaluation += 0.9;
+			}
+			evaluation += (attackedFieldsX + attackedFieldsY) * 0.06;
 		}
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;

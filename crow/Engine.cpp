@@ -13,22 +13,26 @@ engine::Engine::Engine(std::string fen)
 	this->tempColor = evaluator.fen.getColor();
 }
 
-double engine::Engine::calculateMove(move::Move* move)
+double engine::Engine::calculateMove(move::Move* move, bool isEngineCheckLine)
 {
 	/*
+	
 	std::ofstream outfile;
 
-	outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+				outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
 
-	std::string tabs = "";
-	for (int t = 0; t < (tempDepth-1); t++) {
-		tabs += "  ";
-	}
+				std::string tabs = "";
+				for (int t = 0; t < (tempDepth - 1); t++) {
+					tabs += "  ";
+				}
 
-	outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
-	outfile.close();
+				outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
+
+				outfile << " CHECK LINE";
+
+				outfile.close();
+
 	*/
-	
 	double evaluation;
 	double minEvaluation = 1000000.0;
 	double maxEvaluation = -1000000.0;
@@ -38,13 +42,15 @@ double engine::Engine::calculateMove(move::Move* move)
 	tempBoard.makeMove(move);
 	tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 
-	if (tempDepth < 6) {
+	bool isCheck = this->isCheck(tempBoard.colorOnMove);
+
+	if (tempDepth < 4 || (isEngineCheckLine && tempDepth < 8)) {
 
 		std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition();
 		tempDepth++;
 
 		if (legalMoves.size() == 0) {
-			if (this->isCheck(tempBoard.colorOnMove)) {
+			if (isCheck) {
 				tempBoard = tb;
 				tempDepth--;
 
@@ -59,15 +65,37 @@ double engine::Engine::calculateMove(move::Move* move)
 		}
 
 		for (int i = 0; i < legalMoves.size(); i++) {
-			evaluation = calculateMove(legalMoves[i]);
+			if (isEngineCheckLine && tempDepth > 4 && tempDepth % 2 == 0) {
+				if (!isCheck) {
+					tempBoard = tb;
+					tempDepth--;
+					return tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+				}
+			}
+
+			isEngineCheckLine = (tempDepth % 2 == 1 || (tempDepth % 2 == 0 && isCheck)) && (isEngineCheckLine || tempDepth < 3);
+
+			evaluation = calculateMove(legalMoves[i], isEngineCheckLine);
 
 			if (tempDepth % 2 == 0) { // ruch przeciwnika
+
+				if (evaluation == -1000000) {
+					tempBoard = tb;
+					tempDepth--;
+					return -1000000;
+				}
 
 				if (evaluation < minEvaluation) {
 					minEvaluation = evaluation;
 				}
 			}
 			else {
+
+				if (evaluation == 1000000) {
+					tempBoard = tb;
+					tempDepth--;
+					return 1000000;
+				}
 
 				if (evaluation > maxEvaluation) { // w³asny ruch
 					maxEvaluation = evaluation;
@@ -114,15 +142,13 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	}
 
 	for (int i = 0; i < legalMoves.size(); i++) {
-		double eval = calculateMove(legalMoves[i]);
+		double eval = calculateMove(legalMoves[i], false);
 
-		
-	std::ofstream outfile;
-
-	outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-	outfile << "\n" + legalMoves[i]->getMoveICCF() + " " + std::to_string(eval);
-	outfile.close();
-	
+		if (eval == 1000000) {
+			maxEvaluation = eval;
+			bestMove = legalMoves[i]->getMoveICCF();
+			break;
+		}
 
 		if (eval > maxEvaluation) {
 			maxEvaluation = eval;
@@ -141,6 +167,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 	std::vector<move::Move*> legalMoves = {};
 	std::vector<move::Move*> possibleMoves = {};
+	std::vector<move::Move*> initiallyRejectedMoves = {};
 	std::string color = tempBoard.colorOnMove;
 
 
@@ -222,10 +249,22 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 							if ((field.y == 2 && piece.isWhite) || (field.y == 7 && !piece.isWhite)) { // linia startowa
 								if (tempBoard.isFieldEmpty(field.x, field.y + (piece.isWhite ? 2 : -2))) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
+								} 
+
+								// jak jest na linii startowej to rozwa¿amy ruch o 1 do przodu tylko w przypadku gdy po nim bêdzie atakowaæ / broniæ 
+								if (
+									tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 2 : -2)) ||
+									tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 2 : -2))
+								) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
+								}
+								else {
+									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
 								}
 							}
-
-							possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
+							else {
+								possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
+							}
 						}
 						else {
 							// promotion
@@ -455,6 +494,19 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 		}
 
 		tempBoard = tb;
+	}
+
+	if (legalMoves.size() == 0) {
+		for (int i = 0; i < initiallyRejectedMoves.size(); i++) {
+			board::Board tb = tempBoard;
+			tempBoard.makeMove(initiallyRejectedMoves[i]);
+
+			if (!this->isCheck(tempBoard.colorOnMove)) {
+				legalMoves.push_back(initiallyRejectedMoves[i]);
+			}
+
+			tempBoard = tb;
+		}
 	}
 
 	return legalMoves;
