@@ -237,11 +237,20 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'b') {
 			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
 
-			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
-				evaluation -= 0.1;
-				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-					evaluation -= 0.2;
-				}
+			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
+
+			if (attackedFields > 10 && y != 1 && y != 8) {
+				evaluation -= 0.15;
+			}
+
+			if (x == 4 || x == 5) {
+				evaluation -= attackedFields * 0.04;
+			}
+			else if (x == 3 || x == 6) {
+				evaluation -= attackedFields * 0.03;
+			}
+			else {
+				evaluation -= attackedFields * 0.02;
 			}
 		}
 		else if (p == 'n') {
@@ -258,47 +267,52 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'r') {
 			evaluation -= engine::Evaluator::ROOK_BASIC_VALUE;
 
-			int attackedFieldsX = 0;
-			int attackedFieldsY = 0;
-			for (int posX = x - 1; posX > 0; posX--) {
-				attackedFieldsX++;
-				if (!this->getField(posX, y).isFieldEmpty) {
-					break;
-				}
-			}
-			for (int posX = x + 1; posX < 9; posX++) {
-				attackedFieldsX++;
-				if (!this->getField(posX, y).isFieldEmpty) {
-					break;
-				}
-			}
-			for (int posY = y - 1; posY > 0; posY--) {
-				attackedFieldsY++;
-				if (!this->getField(x, posY).isFieldEmpty) {
-					break;
-				}
-			}
-			for (int posY = y + 1; posY < 9; posY++) {
-				attackedFieldsY++;
-				if (!this->getField(x, posY).isFieldEmpty) {
-					break;
-				}
+			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y);
+
+			if (attackedFields > 10 && y != 1 && y != 8) {
+				evaluation -= 0.3;
 			}
 
-			if (attackedFieldsY == 7) {
-				evaluation -= 0.9;
+			if (x == 4 || x == 5) {
+				evaluation -= attackedFields * 0.07;
 			}
-
-			evaluation -= (attackedFieldsX + attackedFieldsY) * 0.06;
+			else if (x == 3 || x == 6) {
+				evaluation -= attackedFields * 0.06;
+			}
+			else {
+				evaluation -= attackedFields * 0.05;
+			}
 		}
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation -= 0.2;
+			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y) + this->getNumberOfAttackedFieldsInDiagonal(x, y);
+
+			if (attackedFields > 20 && y != 1 && y != 8) {
+				evaluation -= 0.15;
+			}
+
+			if (x == 4 || x == 5) {
+				evaluation -= attackedFields * 0.04;
+			}
+			else if (x == 3 || x == 6) {
+				evaluation -= attackedFields * 0.03;
+			}
+			else {
+				evaluation -= attackedFields * 0.02;
 			}
 		} 
 		else if (p == 'k') {
+			if (x == 7 && y == 8) { // pole po roszadzie
+				if (
+					this->getField(6, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
+					this->getField(7, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
+					(this->getField(8, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK || this->getField(8, 6).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
+				) {
+					evaluation -= 0.7;
+				}
+			}
+
 			evaluation -= 10000;
 		}
 		else if (p == 'P') {
@@ -353,13 +367,21 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'B') {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
 
-			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
-				evaluation += 0.1;
-				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-					evaluation += 0.2;
-				}
+			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
+
+			if (attackedFields > 10 && y != 1 && y != 8) {
+				evaluation += 0.15;
 			}
 
+			if (x == 4 || x == 5) {
+				evaluation += attackedFields * 0.04;
+			}
+			else if (x == 3 || x == 6) {
+				evaluation += attackedFields * 0.03;
+			}
+			else {
+				evaluation += attackedFields * 0.02;
+			}
 		}
 		else if (p == 'N') {
 			evaluation += engine::Evaluator::KNIGH_BASIC_VALUE;
@@ -374,49 +396,129 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'R') {
 			evaluation += engine::Evaluator::ROOK_BASIC_VALUE;
 
-			int attackedFieldsX = 0;
-			int attackedFieldsY = 0;
-			for (int posX = x - 1; posX > 0; posX--) {
-				attackedFieldsX++;
-				if (!this->getField(posX, y).isFieldEmpty) {
-					break;
-				}
-			}
-			for (int posX = x + 1; posX < 9; posX++) {
-				attackedFieldsX++;
-				if (!this->getField(posX, y).isFieldEmpty) {
-					break;
-				}
-			}
-			for (int posY = y - 1; posY > 0; posY--) {
-				attackedFieldsY++;
-				if (!this->getField(x, posY).isFieldEmpty) {
-					break;
-				}
-			}
-			for (int posY = y + 1; posY < 9; posY++) {
-				attackedFieldsY++;
-				if (!this->getField(x, posY).isFieldEmpty) {
-					break;
-				}
+			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y);
+
+			if (attackedFields > 10 && y != 1 && y != 8) {
+				evaluation += 0.3;
 			}
 
-			if (attackedFieldsY == 7) {
-				evaluation += 0.9;
+			if (x == 4 || x == 5) {
+				evaluation += attackedFields * 0.07;
 			}
-			evaluation += (attackedFieldsX + attackedFieldsY) * 0.06;
+			else if (x == 3 || x == 6) {
+				evaluation += attackedFields * 0.06;
+			}
+			else {
+				evaluation += attackedFields * 0.05;
+			}
 		}
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation += 0.2;
+			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y) + this->getNumberOfAttackedFieldsInDiagonal(x, y);
+
+			if (attackedFields > 20 && y != 1 && y != 8) {
+				evaluation += 0.15;
+			}
+
+			if (x == 4 || x == 5) {
+				evaluation += attackedFields * 0.04;
+			}
+			else if (x == 3 || x == 6) {
+				evaluation += attackedFields * 0.03;
+			}
+			else {
+				evaluation += attackedFields * 0.02;
 			}
 		}
 		else if (p == 'K') {
 			evaluation += 10000;
+
+			if (x == 7 && y == 1) { // pole po roszadzie
+				if (
+					this->getField(6, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
+					this->getField(7, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
+					(this->getField(8, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK || this->getField(8, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
+					) {
+					evaluation += 0.7;
+				}
+			}
 		}
 	}
 
 	return evaluation;
+}
+
+int board::Board::getNumberOfAttackedFieldsInLines(int x, int y)
+{
+	int attackedFields = 0;
+	for (int posX = x - 1; posX > 0; posX--) {
+		attackedFields++;
+		if (!this->getField(posX, y).isFieldEmpty) {
+			break;
+		}
+	}
+	for (int posX = x + 1; posX < 9; posX++) {
+		attackedFields++;
+		if (!this->getField(posX, y).isFieldEmpty) {
+			break;
+		}
+	}
+	for (int posY = y - 1; posY > 0; posY--) {
+		attackedFields++;
+		if (!this->getField(x, posY).isFieldEmpty) {
+			break;
+		}
+	}
+	for (int posY = y + 1; posY < 9; posY++) {
+		attackedFields++;
+		if (!this->getField(x, posY).isFieldEmpty) {
+			break;
+		}
+	}
+
+	return attackedFields;
+}
+
+int board::Board::getNumberOfAttackedFieldsInDiagonal(int x, int y)
+{
+	int attackedFields = 0;
+	for (int posX = x - 1, posY = y - 1; (posX > 0 && posY > 0);) {
+		attackedFields++;
+		if (!this->getField(posX, y).isFieldEmpty) {
+			break;
+		}
+
+		posX--;
+		posY--;
+	}
+	for (int posX = x + 1, posY = y - 1; (posX < 9 && posY > 0);) {
+		attackedFields++;
+		if (!this->getField(posX, y).isFieldEmpty) {
+			break;
+		}
+
+		posX++;
+		posY--;
+	}
+	for (int posX = x - 1, posY = y + 1; (posX > 0 && posY < 9);) {
+		attackedFields++;
+		if (!this->getField(x, posY).isFieldEmpty) {
+			break;
+		}
+
+		posX--;
+		posY++;
+	}
+	for (int posX = x + 1, posY = y + 1; (posX < 9 && posY < 9);) {
+		attackedFields++;
+		if (!this->getField(x, posY).isFieldEmpty) {
+			break;
+		}
+
+		posX++;
+		posY++;
+	}
+
+	return attackedFields;
 }

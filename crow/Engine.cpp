@@ -273,7 +273,31 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 							possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1), 1));
 
 							// KNIGHT
-							possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1), 4));
+							if (piece.isWhite) {
+								int attackedOrDefendedPiecesByKnight = 0;
+
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 2, 7) && tempBoard.getField(field.x - 2, 7).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x + 2, 7) && tempBoard.getField(field.x + 2, 7).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 1, 6) && tempBoard.getField(field.x - 1, 6).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x + 1, 6) && tempBoard.getField(field.x + 1, 6).getPiece().isReal ? 1 : 0;
+
+								if (attackedOrDefendedPiecesByKnight > 1) {
+									possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x, 8, 4));
+								}
+							}
+							else {
+								int attackedOrDefendedPiecesByKnight = 0;
+
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 2, 2) && tempBoard.getField(field.x - 2, 2).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x + 2, 2) && tempBoard.getField(field.x + 2, 2).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 1, 3) && tempBoard.getField(field.x - 1, 3).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x + 1, 3) && tempBoard.getField(field.x + 1, 3).getPiece().isReal ? 1 : 0;
+
+								if (attackedOrDefendedPiecesByKnight > 1) {
+									possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x, 1, 4));
+								}
+							}
+							
 						}
 					}
 
@@ -282,7 +306,32 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					if (tempBoard.canCaptureOnField(field.x - 1, field.y + (piece.isWhite ? 1 : -1))) {
 						if ((piece.isWhite && field.y == 7) || (!piece.isWhite && field.y == 2)) {
 							possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1), 1));
-							possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1), 4));
+
+							// KNIGHT
+							if (piece.isWhite) {
+								int attackedOrDefendedPiecesByKnight = 0;
+
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 3, 7) && tempBoard.getField(field.x - 3, 7).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x + 1, 7) && tempBoard.getField(field.x + 1, 7).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 2, 6) && tempBoard.getField(field.x - 2, 6).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x, 6) && tempBoard.getField(field.x, 6).getPiece().isReal ? 1 : 0;
+
+								if (attackedOrDefendedPiecesByKnight > 1) {
+									possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x - 1, 8, 4));
+								}
+							}
+							else {
+								int attackedOrDefendedPiecesByKnight = 0;
+
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 3, 2) && tempBoard.getField(field.x - 3, 2).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x + 1, 2) && tempBoard.getField(field.x + 1, 2).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x - 2, 3) && tempBoard.getField(field.x - 2, 3).getPiece().isReal ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += tempBoard.isFieldValid(field.x, 3) && tempBoard.getField(field.x, 3).getPiece().isReal ? 1 : 0;
+
+								if (attackedOrDefendedPiecesByKnight > 1) {
+									possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x - 1, 1, 4));
+								}
+							}
 						}
 						else {
 							possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
@@ -292,7 +341,32 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition() {
 					if (tempBoard.canCaptureOnField(field.x + 1, field.y + (piece.isWhite ? 1 : -1))) {
 						if ((piece.isWhite && field.y == 7) || (!piece.isWhite && field.y == 2)) {
 							possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1), 1));
-							possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1), 4));
+
+							// KNIGHT
+							if (piece.isWhite) {
+								int attackedOrDefendedPiecesByKnight = 0;
+
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x - 1, 7) && tempBoard.getField(field.x - 1, 7).getPiece().isReal) ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x + 3, 7) && tempBoard.getField(field.x + 3, 7).getPiece().isReal) ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x, 6) && tempBoard.getField(field.x, 6).getPiece().isReal) ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x + 2, 6) && tempBoard.getField(field.x + 2, 6).getPiece().isReal) ? 1 : 0;
+
+								if (attackedOrDefendedPiecesByKnight > 1) {
+									possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x + 1, 8, 4));
+								}
+							}
+							else {
+								int attackedOrDefendedPiecesByKnight = 0;
+
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x - 1, 2) && tempBoard.getField(field.x - 1, 2).getPiece().isReal) ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x + 3, 2) && tempBoard.getField(field.x + 3, 2).getPiece().isReal) ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x, 3) && tempBoard.getField(field.x, 3).getPiece().isReal) ? 1 : 0;
+								attackedOrDefendedPiecesByKnight += (tempBoard.isFieldValid(field.x + 2, 3) && tempBoard.getField(field.x + 2, 3).getPiece().isReal) ? 1 : 0;
+
+								if (attackedOrDefendedPiecesByKnight > 1) {
+									possibleMoves.push_back(new move::PromotionMove(field.x, field.y, field.x + 1, 1, 4));
+								}
+							}
 						}
 						else {
 							possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));

@@ -51,5 +51,7 @@ namespace board {
 		bool canBlackQueenCastle;
 	private:
 		void generateFields();
+		int getNumberOfAttackedFieldsInLines(int x, int y);
+		int getNumberOfAttackedFieldsInDiagonal(int x, int y);
 	};
 }
