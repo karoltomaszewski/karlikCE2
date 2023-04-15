@@ -15,8 +15,7 @@ engine::Engine::Engine(std::string fen)
 
 double engine::Engine::calculateMove(move::Move* move, bool isEngineCheckLine)
 {
-	/*if (tempDepth == 1) {
-
+	/*
 		std::ofstream outfile;
 
 		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
@@ -29,7 +28,7 @@ double engine::Engine::calculateMove(move::Move* move, bool isEngineCheckLine)
 		outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
 
 		outfile.close();
-	}*/
+		*/
 	
 	double evaluation;
 	double minEvaluation = 1000000.0;
@@ -144,19 +143,17 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		legalMoves = this->findAllLegalMovesOfPosition(this->mode);
 	}
 
-	for (int i = 0; i < legalMoves.size(); i++) {
-		std::ofstream outfile;
-
-		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-		outfile << "\n" + legalMoves[i]->getMoveICCF();
-
-		outfile.close();
-	}
+	/*
+	legalMoves = {
+		new move::NormalMove(1, 5, 2, 6)
+	};
+	*/
 
 	tempDepth++;
 
 	double maxEvaluation = -100000000;
-	std::string bestMove = "-";
+
+	std::vector<std::string> bestMoves = {};
 
 	if (legalMoves.size() == 0) {
 		if (!this->isCheck(tempBoard.colorOnMove)) {
@@ -167,22 +164,38 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	for (int i = 0; i < legalMoves.size(); i++) {
 		double eval = calculateMove(legalMoves[i], false);
 
+		std::ofstream outfile;
+
+		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+		outfile << "\n" + legalMoves[i]->getMoveICCF() + " : " + std::to_string(eval);
+
+		outfile.close();
+
 		if (eval == 1000000) {
 			maxEvaluation = eval;
-			bestMove = legalMoves[i]->getMoveICCF();
+			bestMoves = { legalMoves[i]->getMoveICCF() };
 			break;
 		}
 
 		if (eval > maxEvaluation) {
 			maxEvaluation = eval;
-			bestMove = legalMoves[i]->getMoveICCF();
+
+			if (eval - 0.02 < maxEvaluation) {
+				bestMoves.push_back(legalMoves[i]->getMoveICCF());
+			}
+			else {
+				bestMoves = { legalMoves[i]->getMoveICCF() };
+			}
+		}
+		else if (eval == maxEvaluation) {
+			bestMoves.push_back(legalMoves[i]->getMoveICCF());
 		}
 	}
 
 	engine::Engine::bestMoveStructure res;
 
 	res.evaluation = maxEvaluation;
-	res.notation = bestMove;
+	res.notation = bestMoves[rand() % bestMoves.size()];
 
 	return res;
 }
@@ -195,6 +208,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 	std::vector<move::Move*> initiallyRejectedMoves = {};
 	std::string color = tempBoard.colorOnMove;
 
+	bool canCastle = false;
 
 	// roszady 
 	if (
@@ -210,6 +224,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						tempBoard.makeMove(new move::NormalMove(5, 1, 6, 1)); // sprawdzanie czy pole przez które musi przejœæ król nie jest szachowane
 						if (!isCheck(tempBoard.colorOnMove)) {
 							candidatesMoves.push_back(new move::CastleMove(5, 1, 7, 1)); // czy po roszadzie nie ma szacha sprawdzi siê podczas przechodzenia z possible do legal
+							canCastle = true;
 						}
 
 						tempBoard = tb;
@@ -223,6 +238,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						tempBoard.makeMove(new move::NormalMove(5, 1, 4, 1));
 						if (!isCheck(tempBoard.colorOnMove)) { // sprawdza czy król po ruchu nie bêdzie szachowany
 							candidatesMoves.push_back(new move::CastleMove(5, 1, 3, 1));
+							canCastle = true;
 						}
 
 						tempBoard = tb;
@@ -237,6 +253,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						tempBoard.makeMove(new move::NormalMove(5, 8, 6, 8));
 						if (!isCheck(tempBoard.colorOnMove)) { // sprawdza czy król po ruchu nie bêdzie szachowany
 							candidatesMoves.push_back(new move::CastleMove(5, 8, 7, 8));
+							canCastle = true;
 						}
 
 						tempBoard = tb;
@@ -250,6 +267,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						tempBoard.makeMove(new move::NormalMove(5, 8, 4, 8));
 						if (!isCheck(tempBoard.colorOnMove)) { // sprawdza czy król po ruchu nie bêdzie szachowany
 							candidatesMoves.push_back(new move::CastleMove(5, 8, 3, 8));
+							canCastle = true;
 						}
 
 						tempBoard = tb;
@@ -278,7 +296,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
 									}
 									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
+										if (
+											(tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 3 : -3)) && !tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 3 : -3))) ||
+											(tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 3 : -3)) && !tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 3 : -3)))
+											) {
+											candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
+										}
+										else {
+											possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
+										}
 									}
 								} 
 
@@ -294,7 +320,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								}
 							}
 							else {
-								possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
+								if (
+									(tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 2 : -2))) ||
+									(tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 2 : -2)))
+								) {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
+								}
+								else {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
+								}
 							}
 						}
 						else {
@@ -410,7 +444,18 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 				
 				// pion i poziom - wie¿a i hetman
 				if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
+
+					bool isAttackedByPawn = false;
+
+					if (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
+						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y - 1) && tempBoard.getField(field.x - 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, field.y - 1) && tempBoard.getField(field.x + 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
+					}
+					else if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
+						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y + 1) && tempBoard.getField(field.x - 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, field.y + 1) && tempBoard.getField(field.x + 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
+					}
+
 					// w pionie do góry
+
 					for (int y = (field.y + 1); y<=8; y++) {
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
 
@@ -420,9 +465,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
+								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
+								isAttackedByPawn
 							) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
+								else {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
 							}
 							else {
 								possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
@@ -430,7 +481,21 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								bool isFieldProtectedByPawn = false;
+
+								if (!piece.isWhite) {
+									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(field.x - 1, y - 1) && tempBoard.getField(field.x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, y - 1) && tempBoard.getField(field.x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
+								}
+								else {
+									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(field.x - 1, y + 1) && tempBoard.getField(field.x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, y + 1) && tempBoard.getField(field.x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
+								}
+
+								if (isFieldProtectedByPawn) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
+								else {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
 							}
 
 							break;
@@ -447,9 +512,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
-								) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
+								isAttackedByPawn
+							) {
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
+								else {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
 							}
 							else {
 								possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
@@ -457,7 +528,21 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								bool isFieldProtectedByPawn = false;
+
+								if (!piece.isWhite) {
+									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(field.x - 1, y - 1) && tempBoard.getField(field.x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, y - 1) && tempBoard.getField(field.x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
+								}
+								else {
+									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(field.x - 1, y + 1) && tempBoard.getField(field.x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, y + 1) && tempBoard.getField(field.x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
+								}
+
+								if (isFieldProtectedByPawn) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
+								else {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								}
 							}
 
 							break;
@@ -474,9 +559,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
-								) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
+								isAttackedByPawn
+							) {
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
+								else {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
 							}
 							else {
 								possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
@@ -484,7 +575,21 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								bool isFieldProtectedByPawn = false;
+
+								if (!piece.isWhite) {
+									isFieldProtectedByPawn = tempBoard.getField(x, field.y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(x - 1, field.y - 1) && tempBoard.getField(x - 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, field.y - 1) && tempBoard.getField(x + 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
+								}
+								else {
+									isFieldProtectedByPawn = tempBoard.getField(x, field.y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(x - 1, field.y + 1) && tempBoard.getField(x - 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, field.y + 1) && tempBoard.getField(x + 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
+								}
+
+								if (isFieldProtectedByPawn) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
+								else {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
 							}
 
 							break;
@@ -501,9 +606,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
-								) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
+								isAttackedByPawn
+							) {
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
+								else {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
 							}
 							else {
 								possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
@@ -530,10 +641,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 					bool isAttackedByPawn = false;
 
-					if (piece.pieceName == FEN::FEN::BISHOP_BLACK) {
+					if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
 						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y - 1) && tempBoard.getField(field.x - 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, field.y - 1) && tempBoard.getField(field.x + 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
 					}
-					else if (piece.pieceName == FEN::FEN::BISHOP_WHITE) {
+					else if (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
 						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y + 1) && tempBoard.getField(field.x - 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, field.y + 1) && tempBoard.getField(field.x + 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
 					}
 
