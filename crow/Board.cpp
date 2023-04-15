@@ -196,7 +196,7 @@ double board::Board::evaluate(std::string originalColor) {
 
 				for (int posY = y - 1; posY > 1; posY--) {
 					if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_BLACK) { // zdublowane pionki
-						evaluation += 0.5;
+						evaluation += 0.35;
 						break;
 					}
 				}
@@ -239,18 +239,15 @@ double board::Board::evaluate(std::string originalColor) {
 
 			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
 
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation -= 0.15;
-			}
+			if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
+				evaluation -= 0.1;
+				if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+					evaluation -= 0.1;
 
-			if (x == 4 || x == 5) {
-				evaluation -= attackedFields * 0.04;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation -= attackedFields * 0.03;
-			}
-			else {
-				evaluation -= attackedFields * 0.02;
+					if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
+						evaluation -= 0.1;
+					}
+				}
 			}
 		}
 		else if (p == 'n') {
@@ -266,40 +263,19 @@ double board::Board::evaluate(std::string originalColor) {
 		}
 		else if (p == 'r') {
 			evaluation -= engine::Evaluator::ROOK_BASIC_VALUE;
-
-			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y);
-
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation -= 0.3;
-			}
-
-			if (x == 4 || x == 5) {
-				evaluation -= attackedFields * 0.07;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation -= attackedFields * 0.06;
-			}
-			else {
-				evaluation -= attackedFields * 0.05;
-			}
 		}
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y) + this->getNumberOfAttackedFieldsInDiagonal(x, y);
+			if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
+				evaluation -= 0.1;
+				if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+					evaluation -= 0.1;
 
-			if (attackedFields > 20 && y != 1 && y != 8) {
-				evaluation -= 0.15;
-			}
-
-			if (x == 4 || x == 5) {
-				evaluation -= attackedFields * 0.04;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation -= attackedFields * 0.03;
-			}
-			else {
-				evaluation -= attackedFields * 0.02;
+					if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
+						evaluation -= 0.1;
+					}
+				}
 			}
 		} 
 		else if (p == 'k') {
@@ -327,7 +303,7 @@ double board::Board::evaluate(std::string originalColor) {
 
 			for (int posY = y + 1; posY < 8; posY++) {
 				if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_WHITE) { // zdublowane pionki
-					evaluation -= 0.5;
+					evaluation -= 0.35;
 					break;
 				}
 			}
@@ -367,20 +343,15 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'B') {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
 
-			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
+			if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
+				evaluation += 0.1;
+				if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+					evaluation += 0.1;
 
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation += 0.15;
-			}
-
-			if (x == 4 || x == 5) {
-				evaluation += attackedFields * 0.04;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation += attackedFields * 0.03;
-			}
-			else {
-				evaluation += attackedFields * 0.02;
+					if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
+						evaluation += 0.1;
+					}
+				}
 			}
 		}
 		else if (p == 'N') {
@@ -395,40 +366,19 @@ double board::Board::evaluate(std::string originalColor) {
 		}
 		else if (p == 'R') {
 			evaluation += engine::Evaluator::ROOK_BASIC_VALUE;
-
-			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y);
-
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation += 0.3;
-			}
-
-			if (x == 4 || x == 5) {
-				evaluation += attackedFields * 0.07;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation += attackedFields * 0.06;
-			}
-			else {
-				evaluation += attackedFields * 0.05;
-			}
 		}
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y) + this->getNumberOfAttackedFieldsInDiagonal(x, y);
+			if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
+				evaluation += 0.1;
+				if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+					evaluation += 0.1;
 
-			if (attackedFields > 20 && y != 1 && y != 8) {
-				evaluation += 0.15;
-			}
-
-			if (x == 4 || x == 5) {
-				evaluation += attackedFields * 0.04;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation += attackedFields * 0.03;
-			}
-			else {
-				evaluation += attackedFields * 0.02;
+					if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
+						evaluation += 0.1;
+					}
+				}
 			}
 		}
 		else if (p == 'K') {

@@ -48,12 +48,14 @@ namespace engine
 		};
 
 		bestMoveStructure findBestMove();
-		std::vector<move::Move*> findAllLegalMovesOfPosition();
+		std::vector<move::Move*> findAllLegalMovesOfPosition(std::string mode);
 		bool isCheck(std::string onColor);
 
 		board::Board history;
 		int minDepth = 1;
 		int tempDepth = 0;
+
+		std::string mode = "candidates";
 
 		double getMin();
 		double calculateMove(
