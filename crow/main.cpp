@@ -2,8 +2,8 @@
 #include "FEN.h"
 #include "Engine.h"
 
-int main()
-{
+int main(int argc, char* argv[])
+{/*
     crow::SimpleApp app; //define your crow application
 
     //define your endpoint at the root directory
@@ -29,4 +29,15 @@ int main()
 
     //set the port, set the app to run on multiple threads, and run the app
     app.port(1000).multithreaded().run();
+    */
+
+    std::string fen = argv[1];
+
+    engine::Engine engine(fen);
+
+    engine::Engine::bestMoveStructure s = engine.findBestMove();
+
+    std::cout << s.notation << std::endl;
+
+    return 0;
 }
