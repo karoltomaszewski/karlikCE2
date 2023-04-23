@@ -9,6 +9,7 @@ namespace pieces {
 		bool isWhite = false;
 		bool isReal = true;
 		char pieceName;
+		int power;
 	};
 	
 	class PieceFactory 

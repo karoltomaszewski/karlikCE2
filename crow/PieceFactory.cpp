@@ -44,35 +44,42 @@ pieces::Piece pieces::PieceFactory::create(int promotionCode, std::string color)
 pieces::Pawn::Pawn(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::PAWN_WHITE;
 	this->pieceName = pieceName;
+	this->power = 1;
 }
 
 pieces::Knight::Knight(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::KNIGHT_WHITE;
 	this->pieceName = pieceName;
+	this->power = 3;
 }
 
 pieces::Bishop::Bishop(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::BISHOP_WHITE;
 	this->pieceName = pieceName;
+	this->power = 3;
 }
 
 pieces::Rook::Rook(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::ROOK_WHITE;
 	this->pieceName = pieceName;
+	this->power = 5;
 }
 
 pieces::Queen::Queen(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::QUEEN_WHITE;
 	this->pieceName = pieceName;
+	this->power = 9;
 }
 
 pieces::King::King(char pieceName) {
 	this->isWhite = pieceName == FEN::FEN::KING_WHITE;
 	this->pieceName = pieceName;
+	this->power = 10000;
 }
 
 pieces::NoPiece::NoPiece(char pieceName) {
 	this->isWhite = false;
 	this->pieceName = pieceName;
 	this->isReal = false;
+	this->power = 0;
 }

@@ -15,6 +15,16 @@ board::Board::Board(FEN::FEN fen) {
 	this->canWhiteQueenCastle = fen.getCastleInfo().find("Q") != std::string::npos;
 	this->canBlackKingCastle = fen.getCastleInfo().find("k") != std::string::npos;
 	this->canBlackQueenCastle = fen.getCastleInfo().find("q") != std::string::npos;
+
+	for (int i = 0; i < 64; i++) {
+		if (this->fields[i].getPiece().pieceName == FEN::FEN::KING_WHITE) {
+			this->whiteKingX = this->fields[i].x;
+			this->whiteKingY = this->fields[i].y;
+		} else if (this->fields[i].getPiece().pieceName == FEN::FEN::KING_BLACK) {
+			this->blackKingX = this->fields[i].x;
+			this->blackKingY = this->fields[i].y;
+		}
+	}
 }
 
 void board::Board::generateFields() {
@@ -84,6 +94,10 @@ bool board::Board::canCaptureOnField(int x, int y) {
 	return this->isFieldOccupiedByOpponentsPiece(x, y);
 }
 
+int board::Board::calculateIndex(int x, int y) {
+	return (8 - y) * 8 + (x - 1);
+}
+
 void board::Board::makeMove(move::Move* move) {
 	pieces::Piece movedPiece = this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece();
 
@@ -91,10 +105,16 @@ void board::Board::makeMove(move::Move* move) {
 		if (movedPiece.pieceName == FEN::FEN::KING_WHITE) {
 			this->canWhiteKingCastle = false;
 			this->canWhiteQueenCastle = false;
+
+			this->whiteKingX = move->xTo;
+			this->whiteKingY = move->yTo;
 		}
 		else if (movedPiece.pieceName == FEN::FEN::KING_BLACK) {
 			this->canBlackKingCastle = false;
 			this->canBlackQueenCastle = false;
+
+			this->blackKingX = move->xTo;
+			this->blackKingY = move->yTo;
 		}
 		else if (movedPiece.pieceName == FEN::FEN::ROOK_WHITE) {
 			if (move->yFrom == 1 && move->xFrom == 1) {
@@ -123,10 +143,16 @@ void board::Board::makeMove(move::Move* move) {
 		if (colorOnMove == FEN::FEN::COLOR_WHITE) {
 			this->canWhiteKingCastle = false;
 			this->canWhiteQueenCastle = false;
+
+			this->whiteKingX = move->xTo;
+			this->whiteKingY = move->yTo;
 		}
 		else {
 			this->canBlackKingCastle = false;
 			this->canBlackQueenCastle = false;
+
+			this->blackKingX = move->xTo;
+			this->blackKingY = move->yTo;
 		}
 
 		// ustawienie króla w dobrym miejscu

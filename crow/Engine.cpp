@@ -41,7 +41,7 @@ double engine::Engine::calculateMove(move::Move* move, bool isEngineCheckLine)
 
 	bool isCheck = this->isCheck(tempBoard.colorOnMove);
 
-	if ((this->mode == "candidates" && tempDepth < 6) || (this->mode == "normal" && tempDepth < 4) || (isEngineCheckLine && tempDepth < 8)) {
+	if ((tempDepth < 6) || (isEngineCheckLine && tempDepth < 8)) {
 
 		double startingBasicEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		std::string thisNodeMode = "candidates";
@@ -134,11 +134,11 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 {
 	tempBoard = board::Board(this->originalFen);
 
-	this->mode = "candidates";
+	double startingEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 
 	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(this->mode);
 
-	if (legalMoves.size() == 0) {
+	if (legalMoves.size() == 0 && this->mode == "candidates") {
 		this->mode = "normal";
 		legalMoves = this->findAllLegalMovesOfPosition(this->mode);
 	}
@@ -178,14 +178,14 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 
 		if (eval > maxEvaluation) {
-			maxEvaluation = eval;
-
 			if (eval - 0.02 < maxEvaluation) {
 				bestMoves.push_back(legalMoves[i]->getMoveICCF());
 			}
 			else {
 				bestMoves = { legalMoves[i]->getMoveICCF() };
 			}
+
+			maxEvaluation = eval;
 		}
 		else if (eval == maxEvaluation) {
 			bestMoves.push_back(legalMoves[i]->getMoveICCF());
@@ -209,6 +209,385 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 	std::string color = tempBoard.colorOnMove;
 
 	bool canCastle = false;
+
+	std::vector<int> fieldsDefendetByOpponentFrequency = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	std::vector<int> fieldsDefendetByOpponentMin = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	std::vector<int> fieldsAttackedFrequency = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	for (int i = 0; i < 64; i++) {
+		board::Field field = tempBoard.fields[i];
+
+		if (field.isFieldEmpty) {
+			continue;
+		}
+
+		pieces::Piece piece = field.getPiece();
+
+		if (((piece.isWhite && color == FEN::FEN::COLOR_WHITE) || (!piece.isWhite && color == FEN::FEN::COLOR_BLACK))) {
+			// my
+			if (piece.pieceName == FEN::FEN::PAWN_WHITE || piece.pieceName == FEN::FEN::PAWN_BLACK) {
+				if (tempBoard.isFieldValid(field.x - 1, field.y - (piece.isWhite ? 1 : -1))) {
+					fieldsAttackedFrequency[board::Board::calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1))]++;
+				}
+
+				if (tempBoard.isFieldValid(field.x + 1, field.y - (piece.isWhite ? 1 : -1))) {
+					fieldsAttackedFrequency[board::Board::calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1))]++;
+				}
+
+				continue;
+			}
+
+
+			if (piece.pieceName == FEN::FEN::KNIGHT_WHITE || piece.pieceName == FEN::FEN::KNIGHT_BLACK) {
+				for (int km = 0; km < this->knightMoves.size(); km++) {
+					int x = field.x + this->knightMoves[km][0];
+					int y = field.y + this->knightMoves[km][1];
+
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
+					}
+				}
+
+				continue;
+			}
+
+
+			if (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
+				int power = (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::BISHOP_BLACK) ? 3 : 9;
+
+				for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x--;
+					y++;
+				}
+
+				for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x--;
+					y--;
+				}
+
+				for (int x = (field.x + 1), y = (field.y - 1); (x <= 8 && y >= 1);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x++;
+					y--;
+				}
+
+				for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x++;
+					y++;
+				}
+
+
+				if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE) {
+					continue;
+				}
+			}
+
+			if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
+				int power = (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK) ? 5 : 9;
+
+				for (int x = (field.x - 1); x >= 1; x--) {
+					if (tempBoard.isFieldValid(x, field.y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, field.y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(x, field.y)) {
+						break;
+					}
+				}
+
+				for (int x = (field.x + 1); x <= 8; x++) {
+					if (tempBoard.isFieldValid(x, field.y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, field.y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(x, field.y)) {
+						break;
+					}
+				}
+
+				for (int y = (field.y - 1); y >= 1; y--) {
+					if (tempBoard.isFieldValid(field.x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(field.x, y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(field.x, y)) {
+						break;
+					}
+				}
+
+				for (int y = (field.y + 1); y <= 8; y++) {
+					if (tempBoard.isFieldValid(field.x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(field.x, y)]++;
+					}
+
+					if (!tempBoard.isFieldEmpty(field.x, y)) {
+						break;
+					}
+
+					continue;
+				}
+			}
+
+			if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
+				for (int km = 0; km < this->kingMoves.size(); km++) {
+					int x = field.x + this->kingMoves[km][0];
+					int y = field.y + this->kingMoves[km][1];
+
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsAttackedFrequency[board::Board::calculateIndex(x, field.y)]++;
+					}
+
+				}
+			}
+
+		}
+		else {
+			if (piece.pieceName == FEN::FEN::PAWN_WHITE || piece.pieceName == FEN::FEN::PAWN_BLACK) {
+				if (tempBoard.isFieldValid(field.x - 1, field.y - (piece.isWhite ? 1 : -1))) {
+					fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1))]++;
+					fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1))] = 1;
+				}
+
+				if (tempBoard.isFieldValid(field.x + 1, field.y - (piece.isWhite ? 1 : -1))) {
+					fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1))]++;
+					fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1))] = 1;
+				}
+
+				continue;
+			}
+
+
+			if (piece.pieceName == FEN::FEN::KNIGHT_WHITE || piece.pieceName == FEN::FEN::KNIGHT_BLACK) {
+				for (int km = 0; km < this->knightMoves.size(); km++) {
+					int x = field.x + this->knightMoves[km][0];
+					int y = field.y + this->knightMoves[km][1];
+
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > 3 || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = 3;
+						}
+					}
+				}
+
+				continue;
+			}
+
+
+			if (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
+				int power = (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::BISHOP_BLACK) ? 3 : 9;
+				
+				for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x--;
+					y++;
+				}
+
+				for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x--;
+					y--;
+				}
+
+				for (int x = (field.x + 1), y = (field.y - 1); (x <= 8 && y >= 1);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x++;
+					y--;
+				}
+
+				for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(x, y)) {
+						break;
+					}
+
+					x++;
+					y++;
+				}
+
+
+				if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE) {
+					continue;
+				}
+			}
+		
+			if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
+				int power = (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK) ? 5 : 9;
+
+				for (int x = (field.x - 1); x >= 1; x--) {
+					if (tempBoard.isFieldValid(x, field.y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(x, field.y)) {
+						break;
+					}
+				}
+
+				for (int x = (field.x + 1); x <= 8; x++) {
+					if (tempBoard.isFieldValid(x, field.y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(x, field.y)) {
+						break;
+					}
+				}
+
+				for (int y = (field.y - 1); y >= 1; y--) {
+					if (tempBoard.isFieldValid(field.x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(field.x, y)) {
+						break;
+					}
+				}
+
+				for (int y = (field.y + 1); y <= 8; y++) {
+					if (tempBoard.isFieldValid(field.x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] = power;
+						}
+					}
+
+					if (!tempBoard.isFieldEmpty(field.x, y)) {
+						break;
+					}
+
+					continue;
+				}
+			}
+		
+			if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
+				for (int km = 0; km < this->kingMoves.size(); km++) {
+					int x = field.x + this->kingMoves[km][0];
+					int y = field.y + this->kingMoves[km][1];
+					
+					if (tempBoard.isFieldValid(x, y)) {
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)]++;
+
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] = 10000;
+						}
+					}
+
+				}
+			}
+		}
+	}
+	/*
+	if (tempDepth == 1) {
+		std::ofstream outfile;
+
+		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+		
+		for (int i = 0; i < 64; i++) {
+			outfile << std::to_string(i) + " : " + std::to_string(fieldsDefendetByOpponentMin[i]) + "\n";
+		}
+
+
+		outfile.close();
+
+	}
+	*/
+/*
+	
+	std::vector<int> fieldsAttackedFrequency = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	if (color == FEN::FEN::COLOR_WHITE) {
+		for (int i = 0; i < 64; i++) {
+			if (this->fields[i])
+		}
+	}
+*/
+
 
 	// roszady 
 	if (
@@ -277,8 +656,22 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 		}
 	}
 
-	for (int i = 0; i < tempBoard.fields.size(); i++) {
+	for (int i = 0; i < 64; i++) {
 		board::Field field = tempBoard.fields[i];
+		/*
+		if (tempDepth == 1) {
+			std::ofstream outfile;
+
+			outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+
+			outfile << std::to_string(field.x) + " " + std::to_string(field.y) + " " + std::to_string(board::Board::calculateIndex(field.x, field.y)) + "\n";
+
+			outfile.close();
+
+		}
+		*/
+
+
 		if (!field.isFieldEmpty) {
 			pieces::Piece piece = field.getPiece();
 			if ((color == FEN::FEN::COLOR_WHITE && piece.isWhite) || (color == FEN::FEN::COLOR_BLACK && !piece.isWhite)) {
@@ -444,15 +837,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 				
 				// pion i poziom - wie¿a i hetman
 				if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
+					int power = (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_WHITE) ? 5 : 9;
 
-					bool isAttackedByPawn = false;
-
-					if (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
-						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y - 1) && tempBoard.getField(field.x - 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, field.y - 1) && tempBoard.getField(field.x + 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-					}
-					else if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
-						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y + 1) && tempBoard.getField(field.x - 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, field.y + 1) && tempBoard.getField(field.x + 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-					}
+					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[i] < power && fieldsDefendetByOpponentMin[i] != 0;
 
 					// w pionie do góry
 
@@ -466,13 +853,20 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByPawn
+								isAttackedByWeaker
 							) {
-								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_WHITE)) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 								}
 								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] != 0;
+
+									if (isFieldProtectedByWeaker) {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
+									else {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
 								}
 							}
 							else {
@@ -481,16 +875,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(field.x, y)]
+									&& tempBoard.getField(field.x, y).getPiece().power < power;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(field.x - 1, y - 1) && tempBoard.getField(field.x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, y - 1) && tempBoard.getField(field.x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(field.x - 1, y + 1) && tempBoard.getField(field.x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, y + 1) && tempBoard.getField(field.x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 								}
 								else {
@@ -504,6 +892,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 					// w pionie w dó³
 					for (int y = (field.y - 1); y >= 1; y--) {
+
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
 
 						if (isEmpty) {
@@ -513,13 +902,20 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByPawn
+								isAttackedByWeaker
 							) {
-								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_WHITE)) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 								}
 								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] != 0;
+
+									if (isFieldProtectedByWeaker) {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
+									else {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
 								}
 							}
 							else {
@@ -528,16 +924,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(field.x, y)]
+									&& tempBoard.getField(field.x, y).getPiece().power < power;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(field.x - 1, y - 1) && tempBoard.getField(field.x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, y - 1) && tempBoard.getField(field.x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = tempBoard.getField(field.x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(field.x - 1, y + 1) && tempBoard.getField(field.x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, y + 1) && tempBoard.getField(field.x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 								}
 								else {
@@ -560,13 +950,20 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByPawn
+								isAttackedByWeaker
 							) {
-								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_WHITE)) {
 									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 								}
 								else {
-									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] != 0;
+
+									if (isFieldProtectedByWeaker) {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									}
+									else {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									}
 								}
 							}
 							else {
@@ -575,16 +972,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, field.y)]
+									&& tempBoard.getField(x, field.y).getPiece().power < power;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = tempBoard.getField(x, field.y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(x - 1, field.y - 1) && tempBoard.getField(x - 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, field.y - 1) && tempBoard.getField(x + 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = tempBoard.getField(x, field.y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(x - 1, field.y + 1) && tempBoard.getField(x - 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, field.y + 1) && tempBoard.getField(x + 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 								}
 								else {
@@ -607,13 +998,20 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByPawn
+								isAttackedByWeaker
 							) {
-								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK)) {
+								if (canCastle && (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_WHITE)) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 								}
 								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] != 0;
+
+									if (isFieldProtectedByWeaker) {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									}
+									else {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									}
 								}
 							}
 							else {
@@ -622,7 +1020,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
-								candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, field.y)]
+									&& tempBoard.getField(x, field.y).getPiece().power < power;
+
+								if (isFieldProtected) {
+									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
+								else {
+									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								}
 							}
 
 							break;
@@ -639,14 +1045,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 				if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
 					// w lewy górny
 
-					bool isAttackedByPawn = false;
+					int power = (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE) ? 3 : 9;
 
-					if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
-						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y - 1) && tempBoard.getField(field.x - 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, field.y - 1) && tempBoard.getField(field.x + 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-					}
-					else if (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
-						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y + 1) && tempBoard.getField(field.x - 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, field.y + 1) && tempBoard.getField(field.x + 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-					}
+					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[i] < power && fieldsDefendetByOpponentMin[i] != 0;
 
 					for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
@@ -659,16 +1060,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
 							) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtectedByWeaker) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -676,17 +1070,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								}							
 							}
 							else {
-								if (isAttackedByPawn) {
-									bool isFieldProtectedByPawn = false;
+								if (isAttackedByWeaker) {
+									bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-									if (!piece.isWhite) {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-									}
-									else {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-									}
-
-									if (isFieldProtectedByPawn) {
+									if (isFieldProtectedByWeaker) {
 										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 									}
 									else {
@@ -700,17 +1087,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
+									&& tempBoard.getField(x, field.y).getPiece().power < power;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -736,16 +1116,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
 							) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtectedByWeaker) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -753,17 +1126,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								}
 							}
 							else {
-								if (isAttackedByPawn) {
-									bool isFieldProtectedByPawn = false;
+								if (isAttackedByWeaker) {
+									bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-									if (!piece.isWhite) {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-									}
-									else {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-									}
-
-									if (isFieldProtectedByPawn) {
+									if (isFieldProtectedByWeaker) {
 										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 									}
 									else {
@@ -777,17 +1143,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
+									&& tempBoard.getField(x, field.y).getPiece().power < power;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -814,16 +1173,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
 							) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtectedByWeaker) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -831,17 +1183,11 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								}
 							}
 							else {
-								if (isAttackedByPawn) {
-									bool isFieldProtectedByPawn = false;
+								if (isAttackedByWeaker) {
+									bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
+										&& tempBoard.getField(x, field.y).getPiece().power < power;
 
-									if (!piece.isWhite) {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-									}
-									else {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-									}
-
-									if (isFieldProtectedByPawn) {
+									if (isFieldProtected) {
 										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 									}
 									else {
@@ -855,17 +1201,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtectedByWeaker) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -892,16 +1230,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
 							) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtectedByWeaker) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -909,17 +1240,11 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								}
 							}
 							else {
-								if (isAttackedByPawn) {
-									bool isFieldProtectedByPawn = false;
+								if (isAttackedByWeaker) {
+									bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
+										&& tempBoard.getField(x, field.y).getPiece().power < power;
 
-									if (!piece.isWhite) {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-									}
-									else {
-										isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-									}
-
-									if (isFieldProtectedByPawn) {
+									if (isFieldProtected) {
 										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 									}
 									else {
@@ -933,17 +1258,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								bool isFieldProtectedByPawn = false;
+								bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
 
-								if (!piece.isWhite) {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-								}
-								else {
-									isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-								}
-
-
-								if (isFieldProtectedByPawn) {
+								if (isFieldProtectedByWeaker) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
@@ -965,70 +1282,51 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 				// skoczek
 
 				if (piece.pieceName == FEN::FEN::KNIGHT_BLACK || piece.pieceName == FEN::FEN::KNIGHT_WHITE) {
-					bool isAttackedByPawn = false;
-
-					if (piece.pieceName == FEN::FEN::KNIGHT_BLACK) {
-						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y - 1) && tempBoard.getField(field.x - 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(field.x + 1, field.y - 1) && tempBoard.getField(field.x + 1, field.y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-					}
-					else if (piece.pieceName == FEN::FEN::KNIGHT_WHITE) {
-						isAttackedByPawn = (tempBoard.isFieldValid(field.x - 1, field.y + 1) && tempBoard.getField(field.x - 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(field.x + 1, field.y + 1) && tempBoard.getField(field.x + 1, field.y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-					}
+					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, field.x)] == 1;
 
 					for (int km = 0; km < this->knightMoves.size(); km++) {
 						int x = field.x + this->knightMoves[km][0];
 						int y = field.y + this->knightMoves[km][1];
 						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
+							move::NormalMove* move = new move::NormalMove(field.x, field.y, x, y);
+							std::string addTo = "candidatesMoves";
+
+							// czy skoczek daje po tym ruchu szacha (nie wlicza szachów z ods³ony)
+							bool isKnightMakingCheckAfterMove = false;
+							if (color == FEN::FEN::COLOR_WHITE) {
+								isKnightMakingCheckAfterMove = (abs(x - tempBoard.blackKingX) == 2 && abs(y - tempBoard.blackKingY) == 1) || (abs(x - tempBoard.blackKingX) == 1 && abs(y - tempBoard.blackKingY) == 2);
+							}
+							else {
+								isKnightMakingCheckAfterMove = (abs(x - tempBoard.whiteKingX) == 2 && abs(y - tempBoard.whiteKingY) == 1) || (abs(x - tempBoard.whiteKingX) == 1 && abs(y - tempBoard.whiteKingY) == 2);
+							}
+
+
 							if (
 								tempBoard.canCaptureOnField(x, y) ||
 								(field.y == 1 && (field.x == 2 || field.x == 7) && piece.pieceName == FEN::FEN::KNIGHT_WHITE) ||
 								(field.y == 8 && (field.x == 2 || field.x == 7) && piece.pieceName == FEN::FEN::KNIGHT_BLACK) ||
-								isAttackedByPawn
+								isAttackedByWeaker ||
+								isKnightMakingCheckAfterMove
 							) {
-								if (tempBoard.canCaptureOnField(x, y) && !isAttackedByPawn) {
-									if (x == 1 || x == 8 || y == 1 || y == 8) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+								if ((tempBoard.canCaptureOnField(x, y) || isKnightMakingCheckAfterMove) && !isAttackedByWeaker) {
+									bool isFieldProtectedByPawn = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 1;
+
+									if (isFieldProtectedByPawn) {
+										addTo = "possibleMoves";
 									}
-									else {
-										bool isFieldProtectedByPawn = false;
-
-										if (!piece.isWhite) {
-											isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_WHITE && (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-										}
-										else {
-											isFieldProtectedByPawn = tempBoard.getField(x, y).getPiece().pieceName == FEN::FEN::PAWN_BLACK && (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-										}
-
-
-										if (isFieldProtectedByPawn) {
-											possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-										}
-										else {
-											candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-										}
-									}
-									
+									// else addTo is still candidatesMoves
 								}
 								else {
 									if (x == 1 || x == 8 || y == 1 || y == 8) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+										addTo = "possibleMoves";
 									}
 									else {
-										bool isFieldProtectedByPawn = false;
-
-										if (!piece.isWhite) {
-											isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y - 1) && tempBoard.getField(x - 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) || (tempBoard.isFieldValid(x + 1, y - 1) && tempBoard.getField(x + 1, y - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE);
-										}
-										else {
-											isFieldProtectedByPawn = (tempBoard.isFieldValid(x - 1, y + 1) && tempBoard.getField(x - 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) || (tempBoard.isFieldValid(x + 1, y + 1) && tempBoard.getField(x + 1, y + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK);
-										}
-
+										bool isFieldProtectedByPawn = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 1;
 
 										if (isFieldProtectedByPawn) {
-											possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+											addTo = "possibleMoves";
 										}
-										else {
-											candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-										}
+										// else addTo is still candidatesMoves
 									}
 								}
 							}
@@ -1036,11 +1334,21 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 								// nie skacz na bande (wiem ¿e to bardzo s³abe, ale przyœpiesza)
 
 								if (x == 1 || x == 8 || y == 1 || y == 8) {
-									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+									addTo = "initiallyRejectedMoves";
 								}
 								else {
-									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+									addTo = "possibleMoves";
 								}
+							}
+
+							if (addTo == "candidatesMoves") {
+								candidatesMoves.push_back(move);
+							}
+							else if (addTo == "possibleMoves") {
+								possibleMoves.push_back(move);
+							}
+							else {
+								initiallyRejectedMoves.push_back(move);
 							}
 						}
 					}

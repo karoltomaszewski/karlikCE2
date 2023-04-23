@@ -33,6 +33,11 @@ namespace board {
 			canWhiteQueenCastle = board.canWhiteQueenCastle;
 			canBlackKingCastle = board.canBlackKingCastle;
 			canBlackQueenCastle = board.canBlackQueenCastle;
+
+			whiteKingX = board.whiteKingX;
+			whiteKingY = board.whiteKingY;
+			blackKingX = board.blackKingX;
+			blackKingY = board.blackKingY;
 		}
 		std::vector<Field> fields;
 		bool isFieldEmpty(int x, int y);
@@ -45,10 +50,17 @@ namespace board {
 		std::string colorOnMove;
 		board::Field getField(int x, int y);
 
+		static int calculateIndex(int x, int y);
+
 		bool canWhiteKingCastle;
 		bool canWhiteQueenCastle;
 		bool canBlackKingCastle;
 		bool canBlackQueenCastle;
+
+		int whiteKingX;
+		int whiteKingY;
+		int blackKingX;
+		int blackKingY;
 	private:
 		void generateFields();
 		int getNumberOfAttackedFieldsInLines(int x, int y);
