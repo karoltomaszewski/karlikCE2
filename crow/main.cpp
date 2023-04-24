@@ -1,7 +1,7 @@
 ﻿#include "crow.h"
 #include "FEN.h"
 #include "Engine.h"
-
+#include <iostream>
 int main()
 {
 
