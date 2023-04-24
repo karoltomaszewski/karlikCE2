@@ -1408,16 +1408,17 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 		tempBoard = tb;
 	}
 
+	if (legalMoves.size() > 0) {
+		for (int i = 0; i < possibleMoves.size(); i++) {
+			board::Board tb = tempBoard;
+			tempBoard.makeMove(possibleMoves[i]);
 
-	for (int i = 0; i < possibleMoves.size(); i++) {
-		board::Board tb = tempBoard;
-		tempBoard.makeMove(possibleMoves[i]);
+			if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+				legalMoves.push_back(possibleMoves[i]);
+			}
 
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			legalMoves.push_back(possibleMoves[i]);
+			tempBoard = tb;
 		}
-
-		tempBoard = tb;
 	}
 		
 	if (mode == "candidates") {

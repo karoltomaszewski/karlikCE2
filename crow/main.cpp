@@ -25,7 +25,7 @@ int main()
 
         engine::Engine::bestMoveStructure s = engine.findBestMove();
 
-        return crow::response("{\nmove: " + s.notation + ", \nevaluation: " + std::to_string(s.evaluation) + "\n}");
+        return crow::response(s.notation);
     });
 
     //set the port, set the app to run on multiple threads, and run the app
