@@ -31,3 +31,17 @@ int main()
     //set the port, set the app to run on multiple threads, and run the app
     app.port(2000).multithreaded().run();
 }
+/*
+int main(int argc, char* argv[])
+{
+    std::string fen = argv[1];
+
+    engine::Engine engine(fen);
+
+    engine::Engine::bestMoveStructure s = engine.findBestMove();
+
+    std::cout << s.notation << std::endl;
+
+    return 0;
+}
+*/
