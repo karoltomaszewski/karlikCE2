@@ -883,7 +883,12 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									if (!canCastle || isAttackedByWeaker) {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
+									else {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
 								}
 							}
 							else {
@@ -937,7 +942,12 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									if (!canCastle || isAttackedByWeaker) {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
+									else {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
 								}
 							}
 							else {
@@ -990,7 +1000,12 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									if (!canCastle || isAttackedByWeaker) {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
+									else {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
 								}
 							}
 							else {
@@ -1043,7 +1058,12 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
+									if (!canCastle || isAttackedByWeaker) {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
+									else {
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									}
 								}
 							}
 							else {
