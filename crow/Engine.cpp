@@ -13,7 +13,7 @@ engine::Engine::Engine(std::string fen)
 	this->tempColor = evaluator.fen.getColor();
 }
 
-double engine::Engine::calculateMove(move::Move* move, bool isEngineCheckLine)
+double engine::Engine::calculateMove(move::Move* move)
 {
 	/*
 		std::ofstream outfile;
@@ -71,17 +71,7 @@ double engine::Engine::calculateMove(move::Move* move, bool isEngineCheckLine)
 		}
 
 		for (int i = 0; i < legalMoves.size(); i++) {
-			if (isEngineCheckLine && tempDepth > 4 && tempDepth % 2 == 0) {
-				if (!isCheck) {
-					tempBoard = tb;
-					tempDepth--;
-					return tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
-				}
-			}
-
-			isEngineCheckLine = (tempDepth % 2 == 1 || (tempDepth % 2 == 0 && isCheck)) && (isEngineCheckLine || tempDepth < 3);
-
-			evaluation = calculateMove(legalMoves[i], isEngineCheckLine);
+			evaluation = calculateMove(legalMoves[i]);
 
 			if (tempDepth % 2 == 0) { // ruch przeciwnika
 
@@ -133,6 +123,8 @@ double engine::Engine::calculateMove(move::Move* move, bool isEngineCheckLine)
 engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 {
 	tempBoard = board::Board(this->originalFen);
+	tempColor = this->originalColor;
+	tempDepth = 0;
 
 	double startingEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 
@@ -142,12 +134,6 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		this->mode = "normal";
 		legalMoves = this->findAllLegalMovesOfPosition(this->mode);
 	}
-
-	/*
-	legalMoves = {
-		new move::NormalMove(1, 5, 2, 6)
-	};
-	*/
 
 	tempDepth++;
 
@@ -162,15 +148,8 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	}
 
 	for (int i = 0; i < legalMoves.size(); i++) {
-		double eval = calculateMove(legalMoves[i], false);
-
-	/*	std::ofstream outfile;
-
-		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-		outfile << "\n" + legalMoves[i]->getMoveICCF() + " : " + std::to_string(eval);
-
-		outfile.close();
-		*/
+		double eval = calculateMove(legalMoves[i]);
+		
 		if (eval == 1000000) {
 			maxEvaluation = eval;
 			bestMoves = { legalMoves[i]->getMoveICCF() };
@@ -190,6 +169,12 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		else if (eval == maxEvaluation) {
 			bestMoves.push_back(legalMoves[i]->getMoveICCF());
 		}
+	}
+
+	if (maxEvaluation < startingEval - 1 && this->mode == "candidates") {
+		this->mode = "normal";
+
+		return this->findBestMove();
 	}
 
 	engine::Engine::bestMoveStructure res;
@@ -367,6 +352,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 					if (tempBoard.isFieldValid(x, y)) {
 						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
 					}
+
 
 				}
 			}
@@ -562,32 +548,6 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 			}
 		}
 	}
-	/*
-	if (tempDepth == 1) {
-		std::ofstream outfile;
-
-		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-		
-		for (int i = 0; i < 64; i++) {
-			outfile << std::to_string(i) + " : " + std::to_string(fieldsDefendetByOpponentMin[i]) + "\n";
-		}
-
-
-		outfile.close();
-
-	}
-	*/
-/*
-	
-	std::vector<int> fieldsAttackedFrequency = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-	if (color == FEN::FEN::COLOR_WHITE) {
-		for (int i = 0; i < 64; i++) {
-			if (this->fields[i])
-		}
-	}
-*/
-
 
 	// roszady 
 	if (
@@ -602,11 +562,10 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 			isKingChecked = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(tempBoard.blackKingX, tempBoard.blackKingY)] > 0;
 		}
 
-		if (isKingChecked) { // król nie jest szachowany
+		if (!isKingChecked) { // król nie jest szachowany
 			if (color == FEN::FEN::COLOR_WHITE) { 
 				if (tempBoard.canWhiteKingCastle) {
 					if (!tempBoard.getField(6, 1).getPiece().isReal && !tempBoard.getField(7, 1).getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste						
-						tempBoard.makeMove(new move::NormalMove(5, 1, 6, 1)); 
 						if (fieldsDefendetByOpponentFrequency[61] == 0 && fieldsDefendetByOpponentFrequency[60] == 0) { // sprawdzanie czy pole przez które musi przejœæ król nie jest szachowane i czy docelowe jest szachowane
 							legalMoves.push_back(new move::CastleMove(5, 1, 7, 1)); // od razu do legalMoves
 							canCastle = true;
@@ -636,7 +595,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 				if (tempBoard.canBlackQueenCastle) {
 					if (!tempBoard.getField(4, 8).getPiece().isReal && !tempBoard.getField(3, 8).getPiece().isReal && !tempBoard.getField(2, 8).getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
 						if (fieldsDefendetByOpponentFrequency[3] == 0 && fieldsDefendetByOpponentFrequency[4] == 0) { // sprawdza czy król po ruchu nie bêdzie szachowany
-							candidatesMoves.push_back(new move::CastleMove(5, 8, 3, 8));
+							legalMoves.push_back(new move::CastleMove(5, 8, 3, 8));
 							canCastle = true;
 						}
 					}

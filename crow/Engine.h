@@ -59,8 +59,7 @@ namespace engine
 
 		double getMin();
 		double calculateMove(
-			move::Move* move,
-			bool isEngineCheckLine
+			move::Move* move
 		);
 	private:
 		std::string originalColor;
