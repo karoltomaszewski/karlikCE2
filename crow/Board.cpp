@@ -209,9 +209,6 @@ double board::Board::evaluate(std::string originalColor) {
 
 			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
 				evaluation -= 0.1;
-				if (originalColor == FEN::FEN::COLOR_BLACK) {
-					evaluation -= 0.0001;
-				}
 				
 				// 4 najbardziej centralne pola na planszy
 				if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
