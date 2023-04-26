@@ -868,8 +868,6 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 							// starting positions
 							if (
-								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
-								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
 								isAttackedByWeaker
@@ -883,7 +881,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									if (!canCastle || isAttackedByWeaker) {
+									if (isAttackedByWeaker) {
 										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 									}
 									else {
@@ -927,8 +925,6 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 							// starting positions
 							if (
-								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
-								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
 								isAttackedByWeaker
@@ -942,7 +938,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									if (!canCastle || isAttackedByWeaker) {
+									if (isAttackedByWeaker) {
 										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 									}
 									else {
@@ -985,8 +981,6 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 							// starting positions
 							if (
-								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
-								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
 								isAttackedByWeaker
@@ -1000,11 +994,11 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									if (!canCastle || isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									if (isAttackedByWeaker) {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
 									}
 									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
 									}
 								}
 							}
@@ -1043,8 +1037,6 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 							// starting positions
 							if (
-								(field.y == 1 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_WHITE) ||
-								(field.y == 8 && (field.x == 1 || field.x == 8) && piece.pieceName == FEN::FEN::ROOK_BLACK) ||
 								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
 								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
 								isAttackedByWeaker
@@ -1058,11 +1050,11 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 									}
 								}
 								else {
-									if (!canCastle || isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+									if (isAttackedByWeaker) {
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
 									}
 									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
 									}
 								}
 							}
