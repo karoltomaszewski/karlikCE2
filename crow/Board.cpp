@@ -179,25 +179,6 @@ double board::Board::evaluate(std::string originalColor) {
 	int x = 0;
 	int y = 8;
 
-
-	// castle
-
-	if (this->canWhiteKingCastle) {
-		evaluation += 0.08;
-	} 
-
-	if (this->canWhiteQueenCastle) {
-		evaluation += 0.04;
-	}
-
-	if (this->canBlackKingCastle) {
-		evaluation -= 0.08;
-	}
-
-	if (this->canBlackQueenCastle) {
-		evaluation -= 0.04;
-	}
-
 	for (int i = 0; i < this->fields.size(); i++) {
 		x = (i % 8) + 1;
 		y = 8 - (i / 8);
@@ -260,6 +241,19 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'b') {
 			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
 
+			if ((x == 5 || x == 4) && y == 6) {
+				if (x == 5) {
+					if (this->getField(5, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK) {
+						evaluation += 0.5; // kara
+					}
+				}
+				else {
+					if (this->getField(4, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK) {
+						evaluation += 0.5; // kara
+					}
+				}
+			}
+
 			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
 
 			if (attackedFields > 10 && y != 1 && y != 8) {
@@ -317,7 +311,7 @@ double board::Board::evaluate(std::string originalColor) {
 					this->getField(7, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
 					(this->getField(8, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK || this->getField(8, 6).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
 				) {
-					evaluation -= 0.7;
+					evaluation -= 1;
 				}
 			}
 
@@ -374,6 +368,19 @@ double board::Board::evaluate(std::string originalColor) {
 		}
 		else if (p == 'B') {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
+
+			if ((x == 5 || x == 4) && y == 3) {
+				if (x == 5) {
+					if (this->getField(5, 2).getPiece().pieceName == FEN::FEN::PAWN_WHITE) {
+						evaluation -= 0.5; // kara
+					}
+				}
+				else {
+					if (this->getField(4, 2).getPiece().pieceName == FEN::FEN::PAWN_WHITE) {
+						evaluation -= 0.5; // kara
+					}
+				}
+			}
 
 			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
 
@@ -433,7 +440,7 @@ double board::Board::evaluate(std::string originalColor) {
 					this->getField(7, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
 					(this->getField(8, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK || this->getField(8, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
 					) {
-					evaluation += 0.7;
+					evaluation += 1;
 				}
 			}
 		}

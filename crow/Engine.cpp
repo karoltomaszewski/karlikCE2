@@ -28,7 +28,7 @@ double engine::Engine::calculateMove(move::Move* move)
 		outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
 
 		outfile.close();
-		*/
+	*/	
 	
 	double evaluation;
 	double minEvaluation = 1000000.0;
@@ -98,7 +98,6 @@ double engine::Engine::calculateMove(move::Move* move)
 				}
 			}	
 		}
-
 		tempBoard = tb;
 		tempDepth--;
 		return tempDepth % 2 == 0 ? maxEvaluation : minEvaluation; // linijke wyzej odejmmuje tempDepth!!!
@@ -150,6 +149,16 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	for (int i = 0; i < legalMoves.size(); i++) {
 		double eval = calculateMove(legalMoves[i]);
 		
+/*
+		std::ofstream outfile;
+
+		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+
+		outfile << legalMoves[i]->getMoveICCF() + " : " + std::to_string(eval) + " / " + std::to_string(startingEval) + "\n";
+
+		outfile.close();
+		*/
+
 		if (eval == 1000000) {
 			maxEvaluation = eval;
 			bestMoves = { legalMoves[i]->getMoveICCF() };
@@ -157,7 +166,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 
 		if (eval > maxEvaluation) {
-			if (eval - 0.04 < maxEvaluation) {
+			if (eval - 0.06 < maxEvaluation) {
 				bestMoves.push_back(legalMoves[i]->getMoveICCF());
 			}
 			else {
@@ -171,7 +180,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 	}
 
-	if (maxEvaluation < startingEval - 1 && this->mode == "candidates") {
+	if (maxEvaluation < startingEval - 1.5 && this->mode == "candidates") {
 		this->mode = "normal";
 
 		return this->findBestMove();
@@ -1234,7 +1243,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
 								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
-									&& tempBoard.getField(x, field.y).getPiece().power < power;
+									&& tempBoard.getField(x, y).getPiece().power < power;
 
 								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
@@ -1439,6 +1448,8 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 		return legalMoves;
 	}
 
+
+	legalMoves = {};
 
 	// sprawdzanie czy po takim ruchu nie ma szacha na w³asnym królu
 
