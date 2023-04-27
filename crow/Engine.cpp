@@ -175,7 +175,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 			break;
 		}
 
-		if (abs(maxEvaluation - eval) < 0.06) {
+		if (abs(maxEvaluation - eval) < 0.06 && this->originalFen.getMoveNumber() > 5) {
 			bestMoves.push_back(legalMoves[i]->getMoveICCF());
 		}
 		else if (eval > maxEvaluation) {
@@ -196,7 +196,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 	}
 
-	if (maxEvaluation + 0.3 < startingEval && this->mode == "candidates") {
+	if (maxEvaluation < startingEval + 0.2 && this->mode == "candidates") {
 		this->mode = "normal";
 
 		engine::Engine::bestMoveStructure res  = this->findBestMove();
@@ -207,7 +207,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 	}
 
-	if (maxEvaluation + 0.3 < startingEval && this->mode == "normal") {
+	if (maxEvaluation < startingEval + 0.2 && this->mode == "normal") {
 		this->mode = "initiallyRejected";
 
 		engine::Engine::bestMoveStructure res = this->findBestMove();
