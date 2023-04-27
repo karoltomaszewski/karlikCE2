@@ -138,7 +138,12 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	double startingEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 
-	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition("all");
+	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(this->mode);
+
+	if (legalMoves.size() == 0 && this->mode == "candidates") {
+		this->mode = "normal";
+		legalMoves = this->findAllLegalMovesOfPosition(this->mode);
+	}
 
 	tempDepth++;
 
@@ -184,6 +189,28 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 			res.notation = bestMoves[rand() % bestMoves.size()];
 
 			return res;
+		}
+	}
+
+	if (maxEvaluation < startingEval && this->mode == "candidates") {
+		this->mode = "normal";
+
+		engine::Engine::bestMoveStructure res  = this->findBestMove();
+
+		if (res.evaluation > maxEvaluation) {
+			maxEvaluation = res.evaluation;
+			bestMoves = { res.notation };
+		}
+	}
+
+	if (maxEvaluation < startingEval && this->mode == "normal") {
+		this->mode = "initiallyRejected";
+
+		engine::Engine::bestMoveStructure res = this->findBestMove();
+
+		if (res.evaluation > maxEvaluation) {
+			maxEvaluation = res.evaluation;
+			bestMoves = { res.notation };
 		}
 	}
 
@@ -1449,6 +1476,9 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 		return legalMoves;
 	}
 
+
+	legalMoves = {};
+
 	// sprawdzanie czy po takim ruchu nie ma szacha na w³asnym królu
 
 	for (int i = 0; i < possibleMoves.size(); i++) {
@@ -1462,7 +1492,15 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 		tempBoard = tb;
 	}
 
-	if (legalMoves.size() == 0 || mode == "all") {
+	if (legalMoves.size() > 0 && mode == "normal") {
+		return legalMoves;
+	}
+
+	if (mode == "initiallyRejected") {
+		legalMoves = {};
+	}
+
+	if (legalMoves.size() == 0) {
 		for (int i = 0; i < initiallyRejectedMoves.size(); i++) {
 			board::Board tb = tempBoard;
 			tempBoard.makeMove(initiallyRejectedMoves[i]);
