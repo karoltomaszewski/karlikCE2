@@ -140,7 +140,14 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(this->mode);
 
-	if (legalMoves.size() == 0 && this->mode == "candidates") {
+	if (legalMoves.size() == 0 && this->mode != "normal") {
+		if (this->mode == "initiallyRejected") {
+			engine::Engine::bestMoveStructure res;
+			res.evaluation = -100000000;
+			res.notation = "";
+			return res;
+		}
+
 		this->mode = "normal";
 		legalMoves = this->findAllLegalMovesOfPosition(this->mode);
 	}
@@ -168,18 +175,15 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 			break;
 		}
 
-		if (eval > maxEvaluation) {
-			if (eval - 0.06 < maxEvaluation) {
-				bestMoves.push_back(legalMoves[i]->getMoveICCF());
-			}
-			else {
-				bestMoves = { legalMoves[i]->getMoveICCF() };
-			}
-
-			maxEvaluation = eval;
-		}
-		else if (eval == maxEvaluation) {
+		if (abs(maxEvaluation - eval) < 0.06) {
 			bestMoves.push_back(legalMoves[i]->getMoveICCF());
+		}
+		else if (eval > maxEvaluation) {
+			bestMoves = { legalMoves[i]->getMoveICCF() };
+		}
+
+		if (eval > maxEvaluation) {
+			maxEvaluation = eval;
 		}
 
 		if (std::time(nullptr) - 105 > this->timeStart) {
@@ -192,7 +196,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 	}
 
-	if (maxEvaluation < startingEval && this->mode == "candidates") {
+	if (maxEvaluation + 0.3 < startingEval && this->mode == "candidates") {
 		this->mode = "normal";
 
 		engine::Engine::bestMoveStructure res  = this->findBestMove();
@@ -203,7 +207,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 	}
 
-	if (maxEvaluation < startingEval && this->mode == "normal") {
+	if (maxEvaluation + 0.3 < startingEval && this->mode == "normal") {
 		this->mode = "initiallyRejected";
 
 		engine::Engine::bestMoveStructure res = this->findBestMove();
