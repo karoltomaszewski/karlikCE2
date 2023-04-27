@@ -44,7 +44,7 @@ double engine::Engine::calculateMove(move::Move* move)
 
 	bool isCheck = this->isCheck(tempBoard.colorOnMove);
 
-	if ((tempDepth < 6)) {
+	if ((tempDepth < this->goalDepth)) {
 
 		double startingBasicEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		std::string thisNodeMode = "candidates";
@@ -161,6 +161,13 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 		double eval = calculateMove(legalMoves[i]);
 
+		std::fstream outfile;
+
+		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+
+		outfile << legalMoves[i]->getMoveICCF() << " : " << std::to_string(eval) << "\n";
+		outfile.close();
+
 		if (eval == 1000000) {
 			maxEvaluation = eval;
 			bestMoves = { legalMoves[i]->getMoveICCF() };
@@ -181,7 +188,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 			bestMoves.push_back(legalMoves[i]->getMoveICCF());
 		}
 
-		if (std::time(nullptr) - 105 > this->timeStart) {
+		if (std::time(nullptr) - this->timeStart > 105) {
 			engine::Engine::bestMoveStructure res;
 
 			res.evaluation = maxEvaluation;
@@ -191,8 +198,19 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 	}
 
-	if ((maxEvaluation < startingEval - 1.5 || std::time(nullptr) - this->timeStart < 60) && this->mode == "candidates") {
+	if (maxEvaluation < startingEval - 1.5 && this->mode == "candidates") {
 		this->mode = "normal";
+
+		engine::Engine::bestMoveStructure res = this->findBestMove();
+
+		if (res.evaluation > maxEvaluation) {
+			return res;
+		}
+	}
+
+	if (time(nullptr) - this->timeStart < 10) {
+		this->mode = "candidates";
+		this->goalDepth = 8;
 
 		engine::Engine::bestMoveStructure res = this->findBestMove();
 
