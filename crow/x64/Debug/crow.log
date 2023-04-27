@@ -1,3 +1,95 @@
-﻿  Engine.cpp
+﻿  Board.cpp
+  CastleMove.cpp
+  Engine.cpp
 C:\Users\karol\Desktop\cppAPI\crow\crow\Engine.cpp(16,29): warning C4244: "=": konwersja z "time_t" do "int", możliwa utrata danych
+  Evaluator.cpp
+C:\Users\karol\Desktop\cppAPI\crow\crow\Evaluator.cpp(20,22): warning C4244: "inicjowanie": konwersja z "double" do "int", możliwa utrata danych
+  NormalMove.cpp
+  PromotionMove.cpp
+  main.cpp
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\query_string.h(117,37): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\query_string.h(370,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\query_string.h(406,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\query_string.h(445,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\utility.h(672,1): warning C4267: "inicjowanie": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_parser_merged.h(589,32): warning C4244: "=": konwersja z "__int64" do "unsigned long", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_parser_merged.h(609,32): warning C4244: "=": konwersja z "__int64" do "unsigned long", możliwa utrata danych
+  Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:
+  - add -D_WIN32_WINNT=0x0601 to the compiler command line; or
+  - add _WIN32_WINNT=0x0601 to your project's Preprocessor Definitions.
+  Assuming _WIN32_WINNT=0x0601 (i.e. Windows 7 target).
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\json.h(1211,39): warning C4267: "argument": konwersja z "size_t" do "uint32_t", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\json.h(1671,1): warning C4267: "return": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(97,1): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(116,1): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(118,1): warning C4267: "argument": konwersja z "size_t" do "_Ty", możliwa utrata danych
+          with
+          [
+              _Ty=int
+          ]
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(221,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(367,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(378,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(390,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(401,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(463,1): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\mustache.h(563,1): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(864,1): warning C4267: "argument": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(880,1): warning C4267: "argument": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(895,1): warning C4267: "argument": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(945,53): warning C4267: "+=": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(956,45): warning C4267: "+=": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(1002,36): warning C4267: "+=": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(1005,33): warning C4267: "+=": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(1204,1): warning C4267: "argument": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(1204,1): warning C4267: "argument": konwersja z "size_t" do "uint16_t", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(1210,1): warning C4267: "argument": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(1259,1): warning C4267: "argument": konwersja z "size_t" do "unsigned int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\routing.h(1420,1): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_connection.h(464,1): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_connection.h(464): message : podczas kompilowania funkcji składowej „void crow::Connection<Adaptor,Handler>::do_read(void)” klasy klasa szablon
+          with
+          [
+              Adaptor=crow::SocketAdaptor,
+              Handler=crow::Crow<>
+          ]
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_connection.h(88): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „void crow::Connection<Adaptor,Handler>::do_read(void)” funkcji szablon
+          with
+          [
+              Adaptor=crow::SocketAdaptor,
+              Handler=crow::Crow<>
+          ]
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_server.h(195): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „crow::Connection<Adaptor,Handler>” klasy klasa szablon
+          with
+          [
+              Adaptor=crow::SocketAdaptor,
+              Handler=crow::Crow<>
+          ]
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_server.h(195): message : podczas kompilowania funkcji składowej „void crow::Server<crow::Crow<>,crow::SocketAdaptor>::do_accept(void)” klasy klasa szablon
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_server.h(152): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „void crow::Server<crow::Crow<>,crow::SocketAdaptor>::do_accept(void)” funkcji szablon
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\app.h(301): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „crow::Server<crow::Crow<>,crow::SocketAdaptor>” klasy klasa szablon
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\app.h(280): message : podczas kompilowania funkcji składowej „void crow::Crow<>::run(void)” klasy klasa szablon
+C:\Users\karol\Desktop\cppAPI\crow\crow\main.cpp(32): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „void crow::Crow<>::run(void)” funkcji szablon
+C:\Users\karol\Desktop\cppAPI\crow\crow\main.cpp(8): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „crow::Crow<>” klasy klasa szablon
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\parser.h(118,1): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\parser.h(104): message : podczas kompilowania funkcji składowej „bool crow::HTTPParser<crow::Connection<Adaptor,Handler>>::feed(const char *,int)” klasy klasa szablon
+          with
+          [
+              Adaptor=crow::SocketAdaptor,
+              Handler=crow::Crow<>
+          ]
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_connection.h(473): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „bool crow::HTTPParser<crow::Connection<Adaptor,Handler>>::feed(const char *,int)” funkcji szablon
+          with
+          [
+              Adaptor=crow::SocketAdaptor,
+              Handler=crow::Crow<>
+          ]
+C:\src\vcpkg\vcpkg\installed\x64-windows\include\crow\http_connection.h(596): message : zobacz odwołanie do kompilowanego tworzenia wystąpienia „crow::HTTPParser<crow::Connection<Adaptor,Handler>>” klasy klasa szablon
+          with
+          [
+              Adaptor=crow::SocketAdaptor,
+              Handler=crow::Crow<>
+          ]
+  Generowanie kodu...
+  LINK : nie znaleziono elementu C:\Users\karol\Desktop\cppAPI\crow\x64\Debug\crow.exe ani nie został on skompilowany podczas ostatniego konsolidowania przyrostowego; zostanie wykonana pełna konsolidacja
   crow.vcxproj -> C:\Users\karol\Desktop\cppAPI\crow\x64\Debug\crow.exe
