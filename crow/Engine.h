@@ -55,6 +55,8 @@ namespace engine
 		int minDepth = 1;
 		int tempDepth = 0;
 
+		int timeStart = 0;
+
 		std::string mode = "candidates";
 
 		double getMin();

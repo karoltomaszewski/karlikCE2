@@ -4,6 +4,7 @@
 #include "FEN.h"
 #include<fstream>
 #include<vector>
+#include<ctime>
 
 engine::Engine::Engine(std::string fen)
 {
@@ -11,6 +12,8 @@ engine::Engine::Engine(std::string fen)
 	this->originalFen = FEN::FEN(fen);
 	this->originalColor = evaluator.fen.getColor();
 	this->tempColor = evaluator.fen.getColor();
+
+	this->timeStart = std::time(nullptr);
 }
 
 double engine::Engine::calculateMove(move::Move* move)
@@ -28,7 +31,7 @@ double engine::Engine::calculateMove(move::Move* move)
 		outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
 
 		outfile.close();
-	*/	
+	*/
 	
 	double evaluation;
 	double minEvaluation = 1000000.0;
@@ -71,6 +74,14 @@ double engine::Engine::calculateMove(move::Move* move)
 		}
 
 		for (int i = 0; i < legalMoves.size(); i++) {
+			if (std::time(nullptr) - 115 > this->timeStart) {
+				engine::Engine::bestMoveStructure res;
+
+				tempBoard = tb;
+				tempDepth--;
+				return -1000000;
+			}
+
 			evaluation = calculateMove(legalMoves[i]);
 
 			if (tempDepth % 2 == 0) { // ruch przeciwnika
@@ -147,17 +158,9 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	}
 
 	for (int i = 0; i < legalMoves.size(); i++) {
+
+
 		double eval = calculateMove(legalMoves[i]);
-		
-/*
-		std::ofstream outfile;
-
-		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-
-		outfile << legalMoves[i]->getMoveICCF() + " : " + std::to_string(eval) + " / " + std::to_string(startingEval) + "\n";
-
-		outfile.close();
-		*/
 
 		if (eval == 1000000) {
 			maxEvaluation = eval;
@@ -177,6 +180,15 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 		else if (eval == maxEvaluation) {
 			bestMoves.push_back(legalMoves[i]->getMoveICCF());
+		}
+
+		if (std::time(nullptr) - 105 > this->timeStart) {
+			engine::Engine::bestMoveStructure res;
+
+			res.evaluation = maxEvaluation;
+			res.notation = bestMoves[rand() % bestMoves.size()];
+
+			return res;
 		}
 	}
 
