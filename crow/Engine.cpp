@@ -1145,7 +1145,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
 								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
-									&& tempBoard.getField(x, field.y).getPiece().power < power;
+									&& tempBoard.getField(x, y).getPiece().power < power;
 
 								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
@@ -1210,7 +1210,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
 								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
-									&& tempBoard.getField(x, field.y).getPiece().power < power;
+									&& tempBoard.getField(x, y).getPiece().power < power;
 
 								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
@@ -1341,7 +1341,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
 								bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] >= fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]
-									&& tempBoard.getField(x, field.y).getPiece().power < power;
+									&& tempBoard.getField(x, y).getPiece().power < power;
 
 								if (isFieldProtected) {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
