@@ -159,7 +159,6 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	for (int i = 0; i < legalMoves.size(); i++) {
 
-
 		double eval = calculateMove(legalMoves[i]);
 
 		if (eval == 1000000) {
@@ -192,10 +191,14 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 	}
 
-	if (maxEvaluation < startingEval - 1.5 && this->mode == "candidates") {
+	if ((maxEvaluation < startingEval - 1.5 || std::time(nullptr) - this->timeStart < 60) && this->mode == "candidates") {
 		this->mode = "normal";
 
-		return this->findBestMove();
+		engine::Engine::bestMoveStructure res = this->findBestMove();
+
+		if (res.evaluation > maxEvaluation) {
+			return res;
+		}
 	}
 
 	engine::Engine::bestMoveStructure res;
