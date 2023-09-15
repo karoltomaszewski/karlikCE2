@@ -74,7 +74,7 @@ double engine::Engine::calculateMove(move::Move* move)
 		}
 
 		for (int i = 0; i < legalMoves.size(); i++) {
-			if (std::time(nullptr) - 115 > this->timeStart) {
+			if (std::time(nullptr) - 30 > this->timeStart) {
 				engine::Engine::bestMoveStructure res;
 
 				tempBoard = tb;
@@ -156,7 +156,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	double maxEvaluation = -100000000;
 
-	std::vector<std::string> bestMoves = {};
+	std::string bestMove;
 
 	if (legalMoves.size() == 0) {
 		if (!this->isCheck(tempBoard.colorOnMove)) {
@@ -171,26 +171,19 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 		if (eval == 1000000) {
 			maxEvaluation = eval;
-			bestMoves = { legalMoves[i]->getMoveICCF() };
+			bestMove = legalMoves[i]->getMoveICCF();
 			break;
 		}
 
-		if (abs(maxEvaluation - eval) < 0.06 && this->originalFen.getMoveNumber() > 5) {
-			bestMoves.push_back(legalMoves[i]->getMoveICCF());
-		}
-		else if (eval > maxEvaluation) {
-			bestMoves = { legalMoves[i]->getMoveICCF() };
-		}
-
 		if (eval > maxEvaluation) {
-			maxEvaluation = eval;
+			bestMove = legalMoves[i]->getMoveICCF();
 		}
 
-		if (std::time(nullptr) - 105 > this->timeStart) {
+		if (std::time(nullptr) - 30 > this->timeStart) {
 			engine::Engine::bestMoveStructure res;
 
 			res.evaluation = maxEvaluation;
-			res.notation = bestMoves[rand() % bestMoves.size()];
+			res.notation = bestMove;
 
 			return res;
 		}
@@ -203,7 +196,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 		if (res.evaluation > maxEvaluation) {
 			maxEvaluation = res.evaluation;
-			bestMoves = { res.notation };
+			bestMove = res.notation;
 		}
 	}
 
@@ -214,14 +207,14 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 		if (res.evaluation > maxEvaluation) {
 			maxEvaluation = res.evaluation;
-			bestMoves = { res.notation };
+			bestMove = res.notation;
 		}
 	}
 
 	engine::Engine::bestMoveStructure res;
 
 	res.evaluation = maxEvaluation;
-	res.notation = bestMoves[rand() % bestMoves.size()];
+	res.notation = bestMove;
 
 	return res;
 }

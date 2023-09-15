@@ -2,7 +2,7 @@
 #include "FEN.h"
 #include "Engine.h"
 #include <iostream>
-int main()
+/*int main()
 {
 
     crow::SimpleApp app; //define your crow application
@@ -30,8 +30,8 @@ int main()
 
     //set the port, set the app to run on multiple threads, and run the app
     app.port(2000).multithreaded().run();
-}
-/*
+}*/
+
 int main(int argc, char* argv[])
 {
     std::string fen = argv[1];
@@ -44,4 +44,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-*/
