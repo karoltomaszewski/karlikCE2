@@ -3,6 +3,7 @@
 #include "Piece.h"
 #include "Move.h"
 #include<fstream>
+#include<string>
 #include "Engine.h"
 
 board::Board::Board(FEN::FEN fen) {
@@ -15,6 +16,18 @@ board::Board::Board(FEN::FEN fen) {
 	this->canWhiteQueenCastle = fen.getCastleInfo().find("Q") != std::string::npos;
 	this->canBlackKingCastle = fen.getCastleInfo().find("k") != std::string::npos;
 	this->canBlackQueenCastle = fen.getCastleInfo().find("q") != std::string::npos;
+
+	std::string enPassantInfo = fen.getEnPassantInfo();
+	
+	std::string files = "abcdefgh";
+
+	if (enPassantInfo != "-") {
+
+		this->canEnPassant = true;
+		this->enPassantX = files.find(enPassantInfo[0], 0) + 1;
+		this->enPassantY = enPassantInfo[1] - '0';
+
+	}
 
 	for (int i = 0; i < 64; i++) {
 		if (this->fields[i].getPiece().pieceName == FEN::FEN::KING_WHITE) {
@@ -170,6 +183,19 @@ void board::Board::makeMove(move::Move* move) {
 		}
 		else {
 			this->fields[(8 - move->yFrom) * 8 + 7].setPiece(pieces::NoPiece('-'));
+		}
+	}
+	else if (move->getType() == "enPassant") {
+		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
+		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+
+		// bia³y bije w przelocie 
+		if (move->yTo == 6) {
+			this->fields[24 + (move->xTo - 1)].setPiece(pieces::NoPiece('-'));
+		}
+		else {
+			// czarny bije w przelocie
+			this->fields[32 + (move->xTo - 1)].setPiece(pieces::NoPiece('-'));
 		}
 	}
 }

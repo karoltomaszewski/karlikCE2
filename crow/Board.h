@@ -33,6 +33,9 @@ namespace board {
 			canWhiteQueenCastle = board.canWhiteQueenCastle;
 			canBlackKingCastle = board.canBlackKingCastle;
 			canBlackQueenCastle = board.canBlackQueenCastle;
+			canEnPassant = board.canEnPassant;
+			enPassantX = board.enPassantX;
+			enPassantY = board.enPassantY;
 
 			whiteKingX = board.whiteKingX;
 			whiteKingY = board.whiteKingY;
@@ -61,6 +64,10 @@ namespace board {
 		int whiteKingY;
 		int blackKingX;
 		int blackKingY;
+
+		bool canEnPassant;
+		int enPassantX;
+		int enPassantY;
 	private:
 		void generateFields();
 		int getNumberOfAttackedFieldsInLines(int x, int y);

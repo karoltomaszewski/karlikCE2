@@ -144,6 +144,7 @@
     <ClCompile Include="CastleMove.cpp" />
     <ClCompile Include="Char.cpp" />
     <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="EnPassantMove.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="FEN.cpp" />
     <ClCompile Include="Field.cpp" />

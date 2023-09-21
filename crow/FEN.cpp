@@ -44,6 +44,11 @@ std::string FEN::FEN::getCastleInfo()
 	return this->getNthSegment(3);
 }
 
+std::string FEN::FEN::getEnPassantInfo()
+{
+	return this->getNthSegment(4);
+}
+
 int FEN::FEN::getMoveNumber()
 {
 	std::string move = this->getNthSegment(6);

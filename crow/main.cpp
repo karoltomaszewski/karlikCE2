@@ -25,13 +25,13 @@
 
         engine::Engine::bestMoveStructure s = engine.findBestMove();
 
-        return crow::response(s.notation);
+        return crow::response(s.notation + " : " + std::to_string(s.evaluation));
     });
 
     //set the port, set the app to run on multiple threads, and run the app
     app.port(2000).multithreaded().run();
-}*/
-
+}
+*/
 int main(int argc, char* argv[])
 {
     std::string fen = argv[1];

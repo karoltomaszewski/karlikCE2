@@ -59,7 +59,6 @@ namespace engine
 
 		std::string mode = "candidates";
 
-		double getMin();
 		double calculateMove(
 			move::Move* move
 		);

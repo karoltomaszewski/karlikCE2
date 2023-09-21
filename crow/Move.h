@@ -37,4 +37,12 @@ namespace move {
 		virtual std::string getMoveICCF();
 		virtual std::string getType() { return "castle"; };
 	};
+
+	class EnPassantMove : public Move {
+	public:
+		EnPassantMove() = default;
+		EnPassantMove(int xFrom, int yFrom, int xTo, int yTo);
+		virtual std::string getMoveICCF();
+		virtual std::string getType() { return "enPassant"; }
+	};
 }
