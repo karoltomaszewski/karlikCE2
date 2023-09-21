@@ -18,7 +18,7 @@ engine::Engine::Engine(std::string fen)
 
 double engine::Engine::calculateMove(move::Move* move)
 {
-	
+	/**
 		std::ofstream outfile;
 
 		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
@@ -31,7 +31,7 @@ double engine::Engine::calculateMove(move::Move* move)
 		outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth);
 
 		outfile.close();
-	
+	*/
 	
 	double evaluation;
 	double minEvaluation = 1000000.0;
