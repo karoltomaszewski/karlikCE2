@@ -18,7 +18,7 @@ engine::Engine::Engine(std::string fen)
 
 double engine::Engine::calculateMove(move::Move* move)
 {
-	/**
+	/*
 		std::ofstream outfile;
 
 		outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
@@ -139,14 +139,6 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	double startingEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 
 	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(this->mode);
-
-	std::ofstream outfile;
-
-	outfile.open("enPassant4.txt", std::ios_base::app); // append instead of overwrite
-
-	outfile << this->mode +  ", ruchy: " + std::to_string(legalMoves.size());
-
-	outfile.close();
 
 	if (legalMoves.size() == 0 && this->mode != "normal") {
 		if (this->mode == "initiallyRejected") {
@@ -1490,7 +1482,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 			if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
 				if (!this->isCheck(tempBoard.colorOnMove)) {
-					legalMoves.push_back(possibleMoves[i]);
+					legalMoves.insert(legalMoves.begin(), possibleMoves[i]);
 				}
 			}
 
@@ -1549,6 +1541,17 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 }
 
 bool engine::Engine::isCheck(std::string onColor) {
+	int kingX, kingY;
+
+	if (onColor == FEN::FEN::COLOR_BLACK) {
+		kingX = tempBoard.blackKingX;
+		kingY = tempBoard.blackKingY;
+	}
+	else {
+		kingX = tempBoard.whiteKingX;
+		kingY = tempBoard.whiteKingY;
+	}
+
 	for (int i = 0; i < tempBoard.fields.size(); i++) {
 		
 		board::Field field = tempBoard.fields[i];
@@ -1561,26 +1564,21 @@ bool engine::Engine::isCheck(std::string onColor) {
 			bool isEmpty = tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 1 : -1));
 
 			if (!isEmpty && tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 1 : -1))) {
-				char pieceOnField = tempBoard.getField(field.x - 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().pieceName;
-
 				if (
-					(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-					(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
+					kingX == (field.x - 1) && kingY == (field.y + (piece.isWhite ? 1 : -1))
 				) {
 					return true;
 				}
 			}
 			
-
 			isEmpty = tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 1 : -1));
 
 			if (!isEmpty && tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 1 : -1))) {
 				char pieceOnField = tempBoard.getField(field.x + 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().pieceName;
 
 				if (
-					(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-					(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
-					) {
+					kingX == (field.x + 1) && kingY == (field.y + (piece.isWhite ? 1 : -1))
+				) {
 					return true;
 				}
 			}
@@ -1592,75 +1590,59 @@ bool engine::Engine::isCheck(std::string onColor) {
 			((piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::ROOK_WHITE) && onColor == FEN::FEN::COLOR_BLACK) ||
 			((piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK) && onColor == FEN::FEN::COLOR_WHITE)
 		) {
-			// w pionie do góry
-			for (int y = (field.y + 1); y <= 8; y++) {
-				bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
+			if (kingX == field.x) {
+				// w pionie do góry
+				for (int y = (field.y + 1); y <= 8; y++) {
+					bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
 
-				if (!isEmpty) {
-					char pieceOnField = tempBoard.getField(field.x, y).getPiece().pieceName;
+					if (!isEmpty) {
+						if (kingY == y) {
+							return true;
+						}
 
-					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
-					) {
-						return true;
+						break;
 					}
+				}
 
-					break;
+				// w pionie w dó³
+				for (int y = (field.y - 1); y >= 1; y--) {
+					bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
+
+					if (!isEmpty) {
+						if (kingY == y) {
+							return true;
+						}
+
+						break;
+					}
 				}
 			}
 
-			// w pionie w dó³
-			for (int y = (field.y - 1); y >= 1; y--) {
-				bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
+			if (kingY == field.y) {
+				// w poziomie w lewo
+				for (int x = (field.x - 1); x >= 1; x--) {
+					bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
 
-				if (!isEmpty) {
-					char pieceOnField = tempBoard.getField(field.x, y).getPiece().pieceName;
+					if (!isEmpty) {
+						if (kingX == x) {
+							return true;
+						}
 
-					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
-					) {
-						return true;
+						break;
 					}
-
-					break;
 				}
-			}
 
-			// w poziomie w lewo
-			for (int x = (field.x - 1); x >= 1; x--) {
-				bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
+				// w poziomie w prawo
+				for (int x = (field.x + 1); x <= 8; x++) {
+					bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
 
-				if (!isEmpty) {
-					char pieceOnField = tempBoard.getField(x, field.y).getPiece().pieceName;
+					if (!isEmpty) {
+						if (kingX == x) {
+							return true;
+						}
 
-					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
-					) {
-						return true;
+						break;
 					}
-
-					break;
-				}
-			}
-
-			// w poziomie w prawo
-			for (int x = (field.x + 1); x <= 8; x++) {
-				bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
-
-				if (!isEmpty) {
-					char pieceOnField = tempBoard.getField(x, field.y).getPiece().pieceName;
-
-					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
-					) {
-						return true;
-					}
-
-					break;
 				}
 			}
 
@@ -1679,11 +1661,9 @@ bool engine::Engine::isCheck(std::string onColor) {
 			for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
 				bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
-				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					char pieceOnField = tempBoard.getField(x, y).getPiece().pieceName;
+				if (!isEmpty) {
 					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
+						kingX == x && kingY == y
 					) {
 						return true;
 					}
@@ -1699,11 +1679,9 @@ bool engine::Engine::isCheck(std::string onColor) {
 			for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
 				bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
-				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					char pieceOnField = tempBoard.getField(x, y).getPiece().pieceName;
+				if (!isEmpty) {
 					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
+						kingX == x && kingY == y
 					) {
 						return true;
 					}
@@ -1719,11 +1697,9 @@ bool engine::Engine::isCheck(std::string onColor) {
 			for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
 				bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
-				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					char pieceOnField = tempBoard.getField(x, y).getPiece().pieceName;
+				if (!isEmpty) {
 					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
+						kingX == x && kingY == y
 					) {
 						return true;
 					}
@@ -1739,12 +1715,9 @@ bool engine::Engine::isCheck(std::string onColor) {
 			for (int x = (field.x + 1), y = (field.y - 1); (x <= 8 && y >= 1);) {
 				bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
-				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					char pieceOnField = tempBoard.getField(x, y).getPiece().pieceName;
-
+				if (!isEmpty) {
 					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
+						kingX == x && kingY == y
 					) 
 					{
 						return true;
@@ -1771,11 +1744,8 @@ bool engine::Engine::isCheck(std::string onColor) {
 				bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
 				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					char pieceOnField = tempBoard.getField(x, y).getPiece().pieceName;
-
 					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
+						kingX == x && kingY == y
 					) {
 						return true;
 					}
@@ -1796,11 +1766,8 @@ bool engine::Engine::isCheck(std::string onColor) {
 				bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
 				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					char pieceOnField = tempBoard.getField(x, y).getPiece().pieceName;
-
 					if (
-						(pieceOnField == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_BLACK) ||
-						(pieceOnField == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_WHITE)
+						kingX == x && kingY == y
 					) {
 						return true;
 					}

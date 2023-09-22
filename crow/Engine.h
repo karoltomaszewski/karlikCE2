@@ -26,12 +26,6 @@ namespace engine
 		FEN::FEN fen;
 	};
 
-	class History
-	{
-	public:
-		std::vector<move::Move*> moves;
-	};
-
 	class Engine
 	{
 	public:
@@ -51,7 +45,6 @@ namespace engine
 		std::vector<move::Move*> findAllLegalMovesOfPosition(std::string mode);
 		bool isCheck(std::string onColor);
 
-		board::Board history;
 		int minDepth = 1;
 		int tempDepth = 0;
 

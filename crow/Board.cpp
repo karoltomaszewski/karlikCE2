@@ -114,6 +114,8 @@ int board::Board::calculateIndex(int x, int y) {
 void board::Board::makeMove(move::Move* move) {
 	pieces::Piece movedPiece = this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece();
 
+	this->canEnPassant = false;
+
 	if (move->getType() == "normal") {
 		if (movedPiece.pieceName == FEN::FEN::KING_WHITE) {
 			this->canWhiteKingCastle = false;
@@ -144,6 +146,14 @@ void board::Board::makeMove(move::Move* move) {
 			}
 		}
 
+
+		if (abs(move->yTo - move->yFrom) == 2) {
+			if (this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece().power == 1) {
+				this->canEnPassant = true;
+				this->enPassantX = move->xFrom;
+				this->enPassantY = (move->yFrom + move->yTo) / 2;
+			}
+		}
 
 		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
 		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
