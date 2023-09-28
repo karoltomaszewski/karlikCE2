@@ -11,7 +11,9 @@ namespace move {
 		int xTo;
 		int yTo;
 		int promotionCode;
+		bool makesCheck = false;
 		virtual std::string getType() = 0;
+		virtual void setMakesCheck() { this->makesCheck = true; };
 	};
 
 	class NormalMove : public Move {

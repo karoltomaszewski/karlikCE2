@@ -278,15 +278,8 @@ double board::Board::evaluate(std::string originalColor) {
 			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
 
 			if ((x == 5 || x == 4) && y == 6) {
-				if (x == 5) {
-					if (this->getField(5, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK) {
-						evaluation += 0.5; // kara
-					}
-				}
-				else {
-					if (this->getField(4, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK) {
-						evaluation += 0.5; // kara
-					}
+				if (this->getField(x, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK) {
+					evaluation += 0.5; // kara
 				}
 			}
 
@@ -406,15 +399,8 @@ double board::Board::evaluate(std::string originalColor) {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
 
 			if ((x == 5 || x == 4) && y == 3) {
-				if (x == 5) {
-					if (this->getField(5, 2).getPiece().pieceName == FEN::FEN::PAWN_WHITE) {
-						evaluation -= 0.5; // kara
-					}
-				}
-				else {
-					if (this->getField(4, 2).getPiece().pieceName == FEN::FEN::PAWN_WHITE) {
-						evaluation -= 0.5; // kara
-					}
+				if (this->getField(x, 2).getPiece().pieceName == FEN::FEN::PAWN_WHITE) {
+					evaluation -= 0.5; // kara
 				}
 			}
 

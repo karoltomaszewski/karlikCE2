@@ -41,77 +41,86 @@ double engine::Engine::calculateMove(move::Move* move)
 
 	tempBoard.makeMove(move);
 	tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
-
-	bool isCheck = this->isCheck(tempBoard.colorOnMove);
+	bool isCheck = move->makesCheck;
 
 	if ((tempDepth < 6)) {
+		std::vector<move::Move*> legalMoves = {};
 
-		double startingBasicEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
-		std::string thisNodeMode = "candidates";
-
-		std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(thisNodeMode);
-
-		if (legalMoves.size() == 0) {
-			thisNodeMode = "normal";
-			legalMoves = this->findAllLegalMovesOfPosition(thisNodeMode);
-		}
+		std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
 		tempDepth++;
 
-		if (legalMoves.size() == 0) {
-			if (isCheck) {
-				tempBoard = tb;
-				tempDepth--;
+		for (int level = 0; level < allMoves.size(); level++) {
+			legalMoves = {};
 
-				return (tempDepth % 2 == 0) ? -1000000 : 1000000;
-			}
-			else {
-				tempBoard = tb;
-				tempDepth--;
+			for (int i = 0; i < allMoves[level].size(); i++) {
+				board::Board tb2 = tempBoard;
+				tempBoard.makeMove(allMoves[level][i]);
+				//tempBoard.colorOnMove = (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
 
-				return 0; // pat
-			}
-		}
+				if (!this->isCheck(tempBoard.colorOnMove)) {
+					legalMoves.push_back(allMoves[level][i]);
+				}
 
-		for (int i = 0; i < legalMoves.size(); i++) {
-			if (std::time(nullptr) - 30 > this->timeStart) {
-				engine::Engine::bestMoveStructure res;
-
-				tempBoard = tb;
-				tempDepth--;
-				return -1000000;
+				tempBoard = tb2;
 			}
 
-			evaluation = calculateMove(legalMoves[i]);
+			if (legalMoves.size() == 0) {
+				continue;
+			}
 
-			if (tempDepth % 2 == 0) { // ruch przeciwnika
+			for (int j = 0; j < legalMoves.size(); j++) {
+				if (std::time(nullptr) - 30 > this->timeStart) {
+					engine::Engine::bestMoveStructure res;
 
-				if (evaluation == -1000000) {
 					tempBoard = tb;
 					tempDepth--;
 					return -1000000;
 				}
 
-				if (evaluation < minEvaluation) {
-					minEvaluation = evaluation;
+				evaluation = calculateMove(legalMoves[j]);
+
+				if (tempDepth % 2 == 0) { // ruch przeciwnika
+
+					if (evaluation == -1000000) {
+						tempBoard = tb;
+						tempDepth--;
+						return -1000000;
+					}
+
+					if (evaluation < minEvaluation) {
+						minEvaluation = evaluation;
+					}
+				}
+				else {
+
+					if (evaluation == 1000000) {
+						tempBoard = tb;
+						tempDepth--;
+						return 1000000;
+					}
+
+					if (evaluation > maxEvaluation) { // w³asny ruch
+						maxEvaluation = evaluation;
+					}
 				}
 			}
-			else {
 
-				if (evaluation == 1000000) {
-					tempBoard = tb;
-					tempDepth--;
-					return 1000000;
-				}
+			tempBoard = tb;
+			tempDepth--;
+			return tempDepth % 2 == 0 ? maxEvaluation : minEvaluation; // linijke wyzej odejmmuje tempDepth!!!
+		}		
 
-				if (evaluation > maxEvaluation) { // w³asny ruch
-					maxEvaluation = evaluation;
-				}
-			}	
+		if (isCheck) {
+			tempBoard = tb;
+			tempDepth--;
+			return tempDepth % 2 == 0 ? -1000000 : 1000000;
 		}
-		tempBoard = tb;
-		tempDepth--;
-		return tempDepth % 2 == 0 ? maxEvaluation : minEvaluation; // linijke wyzej odejmmuje tempDepth!!!
+		else {
+			tempBoard = tb;
+			tempDepth--;
+			return 0;
+		}
 	}
 	else {
 		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
@@ -138,77 +147,86 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	double startingEval = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 
-	std::vector<move::Move*> legalMoves = this->findAllLegalMovesOfPosition(this->mode);
-
-	if (legalMoves.size() == 0 && this->mode != "normal") {
-		if (this->mode == "initiallyRejected") {
-			engine::Engine::bestMoveStructure res;
-			res.evaluation = -100000000;
-			res.notation = "";
-			return res;
-		}
-
-		this->mode = "normal";
-		legalMoves = this->findAllLegalMovesOfPosition(this->mode);
-	}
+	std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
 	tempDepth++;
 
 	double maxEvaluation = -10000000000000;
 
 	std::string bestMove;
+	bool isCheck = this->isCheck(tempBoard.colorOnMove);
 
-	if (legalMoves.size() == 0) {
-		if (!this->isCheck(tempBoard.colorOnMove)) {
-			maxEvaluation = 0;
-		}
-	}
+	std::vector<move::Move*> legalMoves = {};
+	for (int level = 0; level < allMoves.size(); level++) {
+		legalMoves = {};
+		for (int i = 0; i < allMoves[level].size(); i++) {
+			board::Board tb = tempBoard;
+			tempBoard.makeMove(allMoves[level][i]);
 
-	for (int i = 0; i < legalMoves.size(); i++) {
+			if (!this->isCheck(tempBoard.colorOnMove)) {
+				legalMoves.push_back(allMoves[level][i]);
+			}
 
-
-		double eval = calculateMove(legalMoves[i]);
-
-		if (eval == 1000000) {
-			maxEvaluation = eval;
-			bestMove = legalMoves[i]->getMoveICCF();
-			break;
+			tempBoard = tb;
 		}
 
-		if (eval > maxEvaluation) {
-			bestMove = legalMoves[i]->getMoveICCF();
-			maxEvaluation = eval;
+		if (legalMoves.size() == 0) {
+			
+			if (level == allMoves.size() - 1) {
+				if (maxEvaluation == -10000000000000) {
+					if (isCheck) {
+						engine::Engine::bestMoveStructure res;
+						res.evaluation = -100000000;
+						res.notation = "";
+						tempDepth--;
+						return res;
+					}
+					else {
+						engine::Engine::bestMoveStructure res;
+						res.evaluation = 0;
+						res.notation = "";
+						tempDepth--;
+						return res;
+					}
+				}
+			}
+
+			continue;
 		}
 
-		if (std::time(nullptr) - 30 > this->timeStart) {
+		for (int j = 0; j < legalMoves.size(); j++) {
+			double eval = calculateMove(legalMoves[j]);
+
+			if (eval == 1000000) {
+				maxEvaluation = eval;
+				bestMove = legalMoves[j]->getMoveICCF();
+				break;
+			}
+
+			if (eval > maxEvaluation) {
+				bestMove = legalMoves[j]->getMoveICCF();
+				maxEvaluation = eval;
+			}
+
+			if (std::time(nullptr) - 30 > this->timeStart) {
+				engine::Engine::bestMoveStructure res;
+
+				res.evaluation = maxEvaluation;
+				res.notation = bestMove;
+				tempDepth--;
+
+				return res;
+			}
+		}
+
+		if (maxEvaluation >= startingEval + 0.2) {
 			engine::Engine::bestMoveStructure res;
 
 			res.evaluation = maxEvaluation;
 			res.notation = bestMove;
+			tempDepth--;
 
 			return res;
-		}
-	}
-
-	if (maxEvaluation < startingEval + 0.2 && this->mode == "candidates") {
-		this->mode = "normal";
-
-		engine::Engine::bestMoveStructure res  = this->findBestMove();
-
-		if (res.evaluation > maxEvaluation) {
-			maxEvaluation = res.evaluation;
-			bestMove = res.notation;
-		}
-	}
-
-	if (maxEvaluation < startingEval + 0.2 && this->mode == "normal") {
-		this->mode = "initiallyRejected";
-
-		engine::Engine::bestMoveStructure res = this->findBestMove();
-
-		if (res.evaluation > maxEvaluation) {
-			maxEvaluation = res.evaluation;
-			bestMove = res.notation;
 		}
 	}
 
@@ -216,11 +234,13 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	res.evaluation = maxEvaluation;
 	res.notation = bestMove;
+	tempDepth--;
 
 	return res;
 }
 
-std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string mode) {
+std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
+	std::vector<std::vector<move::Move*>> legalMovesDividedByLevel = {};
 	std::vector<move::Move*> legalMoves = {};
 
 	std::vector<move::Move*> candidatesMoves = {};
@@ -772,7 +792,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 
 					// captures
 
-					bool canPawnEnPassant = (tempBoard.canEnPassant && (field.x - 1) == tempBoard.enPassantX && (piece.isWhite ? 6 : 3) == tempBoard.enPassantY);
+					bool canPawnEnPassant = (tempBoard.canEnPassant && (field.x - 1) == tempBoard.enPassantX && (piece.isWhite ? 6 : 3) == tempBoard.enPassantY && (piece.isWhite ? 5 : 4) == field.y);
 					if (
 						tempBoard.canCaptureOnField(field.x - 1, field.y + (piece.isWhite ? 1 : -1)) ||
 						canPawnEnPassant
@@ -817,7 +837,7 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 						}
 					}
 
-					canPawnEnPassant = (tempBoard.canEnPassant && (field.x + 1) == tempBoard.enPassantX && (piece.isWhite ? 6 : 3) == tempBoard.enPassantY);
+					canPawnEnPassant = (tempBoard.canEnPassant && (field.x + 1) == tempBoard.enPassantX && (piece.isWhite ? 6 : 3) == tempBoard.enPassantY && (piece.isWhite ? 5 : 4) == field.y);
 					if (
 						tempBoard.canCaptureOnField(field.x + 1, field.y + (piece.isWhite ? 1 : -1)) ||
 						canPawnEnPassant
@@ -1458,86 +1478,62 @@ std::vector<move::Move*> engine::Engine::findAllLegalMovesOfPosition(std::string
 		}
 	}
 
+	std::vector<move::Move*> realCandidatesMoves = {};
+	std::vector<move::Move*> realPossibleMoves = {};
+	std::vector<move::Move*> realInitiallyRejectedMoves = {};
 
-	
-	// sprawdzanie czy po takim ruchu nie ma szacha na w³asnym królu
 
 	for (int i = 0; i < candidatesMoves.size(); i++) {
 		board::Board tb = tempBoard;
 		tempBoard.makeMove(candidatesMoves[i]);
 
-		if (!this->isCheck(tempBoard.colorOnMove)) {
-			legalMoves.push_back(candidatesMoves[i]);
+		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+			candidatesMoves[i]->setMakesCheck();
+			realCandidatesMoves.insert(realCandidatesMoves.begin(), candidatesMoves[i]);
+		}
+		else {
+			realCandidatesMoves.push_back(candidatesMoves[i]);
 		}
 
 		tempBoard = tb;
 	}
-
-	if (legalMoves.size() > 0) {
-		// do kadydatów dodaje wszystkie possible które robi¹ szacha
-
-		for (int i = 0; i < possibleMoves.size(); i++) {
-			board::Board tb = tempBoard;
-			tempBoard.makeMove(possibleMoves[i]);
-
-			if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-				if (!this->isCheck(tempBoard.colorOnMove)) {
-					legalMoves.insert(legalMoves.begin(), possibleMoves[i]);
-				}
-			}
-
-			tempBoard = tb;
-		}
-	}
-	
-	if (mode == "candidates") {
-		return legalMoves;
-	}
-
-	std::vector<move::Move*> oldLegalMoves = legalMoves;
-	legalMoves = {};
-
-	// sprawdzanie czy po takim ruchu nie ma szacha na w³asnym królu
 
 	for (int i = 0; i < possibleMoves.size(); i++) {
 		board::Board tb = tempBoard;
 		tempBoard.makeMove(possibleMoves[i]);
 
-		if (!this->isCheck(tempBoard.colorOnMove)) {
-			legalMoves.push_back(possibleMoves[i]);
+		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+			possibleMoves[i]->setMakesCheck();
+			realCandidatesMoves.insert(realCandidatesMoves.begin(), possibleMoves[i]);
+		}
+		else {
+			realPossibleMoves.push_back(possibleMoves[i]);
 		}
 
 		tempBoard = tb;
-	}
-
-	if (legalMoves.size() > 0 && mode == "normal") {
-		return legalMoves;
-	}
-	else if (mode == "normal") {
-		return oldLegalMoves;
-	}
-
-	if (mode == "initiallyRejected") {
-		legalMoves = {};
 	}
 
 	for (int i = 0; i < initiallyRejectedMoves.size(); i++) {
 		board::Board tb = tempBoard;
 		tempBoard.makeMove(initiallyRejectedMoves[i]);
 
-		if (!this->isCheck(tempBoard.colorOnMove)) {
-			legalMoves.push_back(initiallyRejectedMoves[i]);
+		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+			initiallyRejectedMoves[i]->setMakesCheck();
+			realCandidatesMoves.insert(realCandidatesMoves.begin(), initiallyRejectedMoves[i]);
+		}
+		else {
+			realInitiallyRejectedMoves.push_back(initiallyRejectedMoves[i]);
 		}
 
 		tempBoard = tb;
 	}
 
-	if (legalMoves.size() > 0) {
-		return legalMoves;
-	}
-	else {
-		return oldLegalMoves;
-	}
+
+	return {
+		realCandidatesMoves,
+		realPossibleMoves,
+		realInitiallyRejectedMoves
+	};
 }
 
 bool engine::Engine::isCheck(std::string onColor) {
@@ -1552,228 +1548,201 @@ bool engine::Engine::isCheck(std::string onColor) {
 		kingY = tempBoard.whiteKingY;
 	}
 
-	for (int i = 0; i < tempBoard.fields.size(); i++) {
-		
-		board::Field field = tempBoard.fields[i];
-		pieces::Piece piece = field.getPiece();
+	// czy jest szachowany przez pionka
+	if (onColor == FEN::FEN::COLOR_WHITE) {
 
 		if (
-			(piece.pieceName == FEN::FEN::PAWN_WHITE && onColor == FEN::FEN::COLOR_BLACK) ||
-			(piece.pieceName == FEN::FEN::PAWN_BLACK && onColor == FEN::FEN::COLOR_WHITE)
+			(tempBoard.isFieldValid(kingX - 1, kingY + 1) && tempBoard.getField(kingX - 1, kingY + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) ||
+			(tempBoard.isFieldValid(kingX + 1, kingY + 1) && tempBoard.getField(kingX + 1, kingY + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
 		) {
-			bool isEmpty = tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 1 : -1));
-
-			if (!isEmpty && tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 1 : -1))) {
-				if (
-					kingX == (field.x - 1) && kingY == (field.y + (piece.isWhite ? 1 : -1))
-				) {
-					return true;
-				}
-			}
-			
-			isEmpty = tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 1 : -1));
-
-			if (!isEmpty && tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 1 : -1))) {
-				char pieceOnField = tempBoard.getField(field.x + 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().pieceName;
-
-				if (
-					kingX == (field.x + 1) && kingY == (field.y + (piece.isWhite ? 1 : -1))
-				) {
-					return true;
-				}
-			}
-
-			continue;
+			return true;
 		}
-
+	}
+	else {
 		if (
-			((piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::ROOK_WHITE) && onColor == FEN::FEN::COLOR_BLACK) ||
-			((piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::ROOK_BLACK) && onColor == FEN::FEN::COLOR_WHITE)
+			(tempBoard.isFieldValid(kingX - 1, kingY - 1) && tempBoard.getField(kingX - 1, kingY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) ||
+			(tempBoard.isFieldValid(kingX + 1, kingY - 1) && tempBoard.getField(kingX + 1, kingY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE)
 		) {
-			if (kingX == field.x) {
-				// w pionie do góry
-				for (int y = (field.y + 1); y <= 8; y++) {
-					bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
-
-					if (!isEmpty) {
-						if (kingY == y) {
-							return true;
-						}
-
-						break;
-					}
-				}
-
-				// w pionie w dó³
-				for (int y = (field.y - 1); y >= 1; y--) {
-					bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
-
-					if (!isEmpty) {
-						if (kingY == y) {
-							return true;
-						}
-
-						break;
-					}
-				}
-			}
-
-			if (kingY == field.y) {
-				// w poziomie w lewo
-				for (int x = (field.x - 1); x >= 1; x--) {
-					bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
-
-					if (!isEmpty) {
-						if (kingX == x) {
-							return true;
-						}
-
-						break;
-					}
-				}
-
-				// w poziomie w prawo
-				for (int x = (field.x + 1); x <= 8; x++) {
-					bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
-
-					if (!isEmpty) {
-						if (kingX == x) {
-							return true;
-						}
-
-						break;
-					}
-				}
-			}
-
-			if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK) {
-				continue;
-			}
+			return true;
 		}
+	}
 
-		
-		// skos - goniec i hetman
-		if (
-			((piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::BISHOP_WHITE) && onColor == FEN::FEN::COLOR_BLACK) ||
-			((piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::BISHOP_BLACK) && onColor == FEN::FEN::COLOR_WHITE)
-		) {
-			// w lewy górny
-			for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
-				bool isEmpty = tempBoard.isFieldEmpty(x, y);
+	// czy jest szachowany przez hetmana lub wie¿e
+	
+	// poziom - lewo
+	for (int x = (kingX - 1); x > 0; x--) {
+		board::Field field = tempBoard.getField(x, kingY);
 
-				if (!isEmpty) {
-					if (
-						kingX == x && kingY == y
-					) {
-						return true;
-					}
-
-					break;
-				}
-
-				x--;
-				y++;
-			}
-
-			// w prawy górny
-			for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
-				bool isEmpty = tempBoard.isFieldEmpty(x, y);
-
-				if (!isEmpty) {
-					if (
-						kingX == x && kingY == y
-					) {
-						return true;
-					}
-
-					break;
-				}
-
-				x++;
-				y++;
-			}
-
-			// w lewy dolny
-			for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
-				bool isEmpty = tempBoard.isFieldEmpty(x, y);
-
-				if (!isEmpty) {
-					if (
-						kingX == x && kingY == y
-					) {
-						return true;
-					}
-
-					break;
-				}
-
-				x--;
-				y--;
-			}
-
-			// w prawy dolny
-			for (int x = (field.x + 1), y = (field.y - 1); (x <= 8 && y >= 1);) {
-				bool isEmpty = tempBoard.isFieldEmpty(x, y);
-
-				if (!isEmpty) {
-					if (
-						kingX == x && kingY == y
-					) 
-					{
-						return true;
-					}
-
-					break;
-				}
-
-				x++;
-				y--;
-			}
-
-			continue;
-		}
-		
-		if (
-			(piece.pieceName == FEN::FEN::KNIGHT_WHITE && onColor == FEN::FEN::COLOR_BLACK) ||
-			(piece.pieceName == FEN::FEN::KNIGHT_BLACK && onColor == FEN::FEN::COLOR_WHITE)
-		) {
-			for (int km = 0; km < this->knightMoves.size(); km++) {
-				int x = field.x + this->knightMoves[km][0];
-				int y = field.y + this->knightMoves[km][1];
-
-				bool isEmpty = tempBoard.isFieldEmpty(x, y);
-
-				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					if (
-						kingX == x && kingY == y
-					) {
-						return true;
-					}
-				}
-			}
-
-			continue;
-		}
-
-		if (
-			(piece.pieceName == FEN::FEN::KING_WHITE && onColor == FEN::FEN::COLOR_BLACK) ||
-			(piece.pieceName == FEN::FEN::KING_BLACK && onColor == FEN::FEN::COLOR_WHITE)
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::ROOK_BLACK : FEN::FEN::ROOK_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
 			) {
-			for (int km = 0; km < this->kingMoves.size(); km++) {
-				int x = field.x + this->kingMoves[km][0];
-				int y = field.y + this->kingMoves[km][1];
-
-				bool isEmpty = tempBoard.isFieldEmpty(x, y);
-
-				if (!isEmpty && tempBoard.isFieldValid(x, y)) {
-					if (
-						kingX == x && kingY == y
-					) {
-						return true;
-					}
-				}
+				return true;
 			}
+
+			break;
 		}
+	}
+
+	// poziom - prawo
+	for (int x = (kingX + 1); x < 9; x++) {
+		board::Field field = tempBoard.getField(x, kingY);
+
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::ROOK_BLACK : FEN::FEN::ROOK_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
+			) {
+				return true;
+			}
+
+			break;
+		}
+	}
+
+	// pion - góra
+	for (int y = (kingY + 1); y < 9; y++) {
+		board::Field field = tempBoard.getField(kingX, y);
+
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::ROOK_BLACK : FEN::FEN::ROOK_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
+			) {
+				return true;
+			}
+
+			break;
+		}
+	}
+
+	// pion - dó³
+	for (int y = (kingY - 1); y > 0; y--) {
+		board::Field field = tempBoard.getField(kingX, y);
+
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::ROOK_BLACK : FEN::FEN::ROOK_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
+			) {
+				return true;
+			}
+
+			break;
+		}
+	}
+
+	// skos 
+	// lewy górny
+
+	for (int x = (kingX - 1), y = (kingY + 1); (x > 0 && y < 9);) {
+		board::Field field = tempBoard.getField(x, y);
+
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::BISHOP_BLACK : FEN::FEN::BISHOP_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
+			) {
+				return true;
+			}
+
+			break;
+		}
+
+		x--;
+		y++;
+	}
+
+	// prawy górny
+
+	for (int x = (kingX + 1), y = (kingY + 1); (x < 9 && y < 9);) {
+		board::Field field = tempBoard.getField(x, y);
+
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::BISHOP_BLACK : FEN::FEN::BISHOP_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
+			) {
+				return true;
+			}
+
+			break;
+		}
+
+		x++;
+		y++;
+	}
+
+	// lewy dolny
+
+	for (int x = (kingX - 1), y = (kingY - 1); (x > 0 && y > 0);) {
+		board::Field field = tempBoard.getField(x, y);
+
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::BISHOP_BLACK : FEN::FEN::BISHOP_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
+			) {
+				return true;
+			}
+
+			break;
+		}
+
+		x--;
+		y--;
+	}
+
+	// prawy dolny
+
+	for (int x = (kingX + 1), y = (kingY - 1); (x < 9 && y > 0);) {
+		board::Field field = tempBoard.getField(x, y);
+
+		if (!field.isFieldEmpty) {
+			if (
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::BISHOP_BLACK : FEN::FEN::BISHOP_WHITE) ||
+				field.getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::QUEEN_BLACK : FEN::FEN::QUEEN_WHITE)
+			) {
+				return true;
+			}
+
+			break;
+		}
+
+		x++;
+		y--;
+	}
+
+	// skoczek
+
+	for (int km = 0; km < this->knightMoves.size(); km++) {
+		int x = kingX + this->knightMoves[km][0];
+		int y = kingY + this->knightMoves[km][1];
+
+		if (
+			tempBoard.isFieldValid(x, y) &&
+			tempBoard.getField(x, y).getPiece().pieceName == (onColor == FEN::FEN::COLOR_WHITE ? FEN::FEN::KNIGHT_BLACK : FEN::FEN::KNIGHT_WHITE)
+		) {
+			return true;
+		}
+	}
+
+	// król
+
+	if (
+		abs(tempBoard.whiteKingX - tempBoard.blackKingX) <= 1 &&
+		abs(tempBoard.whiteKingY - tempBoard.blackKingY) <= 1
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+bool engine::Engine::doesMoveMakeCheck(move::Move* move) {
+	if (move->getType() == "normal" || move->getType() == "enPassant") {
+
 	}
 
 	return false;
