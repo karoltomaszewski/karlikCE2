@@ -1,3 +1,3 @@
 ﻿  Engine.cpp
-C:\Users\karol\Desktop\cppAPI\crow\crow\Engine.cpp(16,29): warning C4244: "=": konwersja z "time_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\cppAPI\crow\crow\Engine.cpp(15,29): warning C4244: "=": konwersja z "time_t" do "int", możliwa utrata danych
   crow.vcxproj -> C:\Users\karol\Desktop\cppAPI\crow\x64\Debug\crow.exe

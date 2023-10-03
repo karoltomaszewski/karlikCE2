@@ -32,7 +32,6 @@ namespace engine
 		Engine() = default;
 		Engine(std::string fen);
 		board::Board tempBoard;
-		std::string tempColor;
 		Evaluator evaluator;
 		FEN::FEN originalFen;
 
@@ -47,12 +46,14 @@ namespace engine
 		bool doesMoveMakeCheck(move::Move* move);
 
 		int minDepth = 1;
-		int tempDepth = 0;
 
 		int timeStart = 0;
 
 		double calculateMove(
-			move::Move* move
+			move::Move* move,
+			double alpha,
+			double beta,
+			int tempDepth
 		);
 	private:
 		std::string originalColor;
