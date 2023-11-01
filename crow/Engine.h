@@ -53,7 +53,8 @@ namespace engine
 			move::Move* move,
 			double alpha,
 			double beta,
-			int tempDepth
+			int tempDepth,
+			int maxDepth
 		);
 	private:
 		std::string originalColor;

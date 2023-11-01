@@ -16,14 +16,14 @@ engine::Engine::Engine(std::string fen)
 }
 
 
-double engine::Engine::calculateMove(move::Move* move, double alpha, double beta, int tempDepth)
+double engine::Engine::calculateMove(move::Move* move, double alpha, double beta, int tempDepth, int maxDepth)
 {
 	board::Board tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
 	tempBoard.colorOnMove = tempBoard.colorOnMove == FEN::FEN::COLOR_BLACK ? FEN::FEN::COLOR_WHITE : FEN::FEN::COLOR_BLACK;
 	bool isCheck = move->makesCheck; // czy jest szach na przeciwniku
 
-	if (tempDepth == 7) { 
+	if (tempDepth == maxDepth) { 
 		double e = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
@@ -34,8 +34,19 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
 	board::Board tb2 = tempBoard;
+
+	int LMR = {};
+	int LMR2 = {};
+
 	legalMoves = {};
 	for (int level = 0; level < allMoves.size(); level++) {
+		if (level == 1) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
+			LMR = legalMoves.size();
+		}
+		else if (level == allMoves.size() - 4) {
+			LMR2 = legalMoves.size();
+		}
+
 		for (int i = 0; i < allMoves[level].size(); i++) {
 			tempBoard.makeMove(allMoves[level][i]);
 
@@ -51,19 +62,20 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		tempBoard = tb;
 
 		if (isCheck) {
-			return tempDepth % 2 == 0 ? 1000000 : -1000000;
+			return tempDepth % 2 == 1 ? 1000000 : -1000000;
 		}
 		else {
 			return 0;
 		}
 	}
 
-	if (tempDepth % 2 == 0) {
+	if (tempDepth % 2 == 1) {
 		// przeciwnik
 
 		double value = INFINITY;
 		for (int i = 0; i < legalMoves.size(); i++) {
-			value = std::min(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1));
+			maxDepth = std::min(LMR < i ? 7 : (LMR2<i ? 6 : 5), maxDepth);
+			value = std::min(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
 			if (value == -1000000) {
 				return -1000000;
@@ -79,7 +91,9 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	} else {
 		double value = -1 * INFINITY;
 		for (int i = 0; i < legalMoves.size(); i++) {
-			value = std::max(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1));
+			maxDepth = std::min(LMR < i ? 7 : (LMR2 < i ? 6 : 5), maxDepth);
+
+			value = std::max(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
 			if (value == 1000000) {
 				return 1000000;
@@ -102,17 +116,25 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
+
 	double alpha = -1 * INFINITY;
 	double beta = INFINITY;
 	double value = -1 * INFINITY;
 
-	bool isCheck = this->isCheck(tempBoard.colorOnMove);
-
 	std::vector<move::Move*> legalMoves = {};
 
 	board::Board tb = tempBoard;
+	int LMR = {};
+	int LMR2 = {};
 
 	for (int level = 0; level < allMoves.size(); level++) {
+		if (level == 1) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
+			LMR = legalMoves.size();
+		}
+		else if (level == allMoves.size() - 4) {
+			LMR2 = legalMoves.size();
+		}
+
 		for (int i = 0; i < allMoves[level].size(); i++) {
 			tempBoard.makeMove(allMoves[level][i]);
 
@@ -134,7 +156,8 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	}
 
 	for (int j = 0; j < legalMoves.size(); j++) { // depth 1
-		value = std::max(value, calculateMove(legalMoves[j], alpha, beta, 2));
+		int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
+		value = std::max(value, calculateMove(legalMoves[j], alpha, beta, 1, maxDepth));
 		alpha = std::max(alpha, value);
 
 		if (value > maxEval) {
@@ -147,6 +170,11 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		}
 
 		tempBoard = tb;
+
+		if (std::time(nullptr) - 30 > this->timeStart) {
+			break;
+		}
+
 	}
 
 	res.evaluation = maxEval;
@@ -1414,16 +1442,24 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	}
 
 	board::Board tb = tempBoard;
+	
+	std::vector<move::Move*> promotionMovesWithoutCheck = {};
+	std::vector<move::Move*> advantageCapturesWithoutCheck = {};
+	std::vector<move::Move*> equalCapturesWithoutCheck = {};
+	std::vector<move::Move*> disadvantageCapturesWithoutCheck = {};
+	std::vector<move::Move*> castleWithoutCheck = {};
+	std::vector<move::Move*> initiallyRejectedMovesWithoutCheck = {};
 
-	for (int i = 0; i < candidatesMoves.size(); i++) {
-		tempBoard.makeMove(candidatesMoves[i]);
+	
+	for (int i = 0; i < initiallyRejectedMoves.size(); i++) {
+		tempBoard.makeMove(initiallyRejectedMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			candidatesMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), candidatesMoves[i]);
+			initiallyRejectedMoves[i]->setMakesCheck();
+			checkMoves.insert(checkMoves.begin(), initiallyRejectedMoves[i]);
 		}
 		else {
-			otherMoves.push_back(candidatesMoves[i]);
+			initiallyRejectedMovesWithoutCheck.push_back(initiallyRejectedMoves[i]);
 		}
 
 		tempBoard = tb;
@@ -1443,55 +1479,15 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < initiallyRejectedMoves.size(); i++) {
-		tempBoard.makeMove(initiallyRejectedMoves[i]);
+	for (int i = 0; i < candidatesMoves.size(); i++) {
+		tempBoard.makeMove(candidatesMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			initiallyRejectedMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), initiallyRejectedMoves[i]);
+			candidatesMoves[i]->setMakesCheck();
+			checkMoves.insert(checkMoves.begin(), candidatesMoves[i]);
 		}
 		else {
-			otherMoves.push_back(initiallyRejectedMoves[i]);
-		}
-
-		tempBoard = tb;
-	}
-
-	for (int i = 0; i < promotionMoves.size(); i++) {
-		tempBoard.makeMove(promotionMoves[i]);
-
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			promotionMoves[i]->setMakesCheck();
-		}
-
-		tempBoard = tb;
-	}
-
-	for (int i = 0; i < advantageCaptureMoves.size(); i++) {
-		tempBoard.makeMove(advantageCaptureMoves[i]);
-
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			advantageCaptureMoves[i]->setMakesCheck();
-		}
-
-		tempBoard = tb;
-	}
-
-	for (int i = 0; i < equalCaptureMoves.size(); i++) {
-		tempBoard.makeMove(equalCaptureMoves[i]);
-
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			equalCaptureMoves[i]->setMakesCheck();
-		}
-
-		tempBoard = tb;
-	}
-
-	for (int i = 0; i < disadvantageCaptureMoves.size(); i++) {
-		tempBoard.makeMove(disadvantageCaptureMoves[i]);
-
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			disadvantageCaptureMoves[i]->setMakesCheck();
+			otherMoves.push_back(candidatesMoves[i]);
 		}
 
 		tempBoard = tb;
@@ -1502,19 +1498,80 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
 			castlesMoves[i]->setMakesCheck();
+			checkMoves.insert(checkMoves.begin(), castlesMoves[i]);
+		}
+		else {
+			castleWithoutCheck.push_back(castlesMoves[i]);
+		}
+
+		tempBoard = tb;
+	}
+
+	for (int i = 0; i < disadvantageCaptureMoves.size(); i++) {
+		tempBoard.makeMove(disadvantageCaptureMoves[i]);
+
+		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+			disadvantageCaptureMoves[i]->setMakesCheck();
+			checkMoves.insert(checkMoves.begin(), disadvantageCaptureMoves[i]);
+		}
+		else {
+			disadvantageCapturesWithoutCheck.push_back(disadvantageCaptureMoves[i]);
+		}
+
+		tempBoard = tb;
+	}
+
+	for (int i = 0; i < equalCaptureMoves.size(); i++) {
+		tempBoard.makeMove(equalCaptureMoves[i]);
+
+		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+			equalCaptureMoves[i]->setMakesCheck();
+			checkMoves.insert(checkMoves.begin(), equalCaptureMoves[i]);
+		}
+		else {
+			equalCapturesWithoutCheck.push_back(equalCaptureMoves[i]);
+		}
+
+		tempBoard = tb;
+	}
+
+	for (int i = 0; i < advantageCaptureMoves.size(); i++) {
+		tempBoard.makeMove(advantageCaptureMoves[i]);
+
+		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+			advantageCaptureMoves[i]->setMakesCheck();
+			checkMoves.insert(checkMoves.begin(), advantageCaptureMoves[i]);
+		}
+		else {
+			advantageCapturesWithoutCheck.push_back(advantageCaptureMoves[i]);
+		}
+
+		tempBoard = tb;
+	}
+
+	for (int i = 0; i < promotionMoves.size(); i++) {
+		tempBoard.makeMove(promotionMoves[i]);
+
+		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+			promotionMoves[i]->setMakesCheck();
+			checkMoves.insert(checkMoves.begin(), promotionMoves[i]);
+		}
+		else {
+			promotionMovesWithoutCheck.push_back(promotionMoves[i]);
 		}
 
 		tempBoard = tb;
 	}
 
 	return {
-		promotionMoves,
-		advantageCaptureMoves,
-		equalCaptureMoves,
-		disadvantageCaptureMoves,
-		castlesMoves,
 		checkMoves,
-		otherMoves
+		promotionMovesWithoutCheck,
+		advantageCapturesWithoutCheck,
+		equalCapturesWithoutCheck,
+		disadvantageCapturesWithoutCheck,
+		castleWithoutCheck,
+		otherMoves,
+		initiallyRejectedMovesWithoutCheck
 	};
 }
 
