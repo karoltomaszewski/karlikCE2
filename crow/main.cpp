@@ -1,5 +1,4 @@
-﻿#include "crow.h"
-#include "FEN.h"
+﻿#include "FEN.h"
 #include "Engine.h"
 #include <iostream>
 /*int main()
@@ -34,6 +33,7 @@
 */
 int main(int argc, char* argv[])
 {
+    //std::string fen = "r1bq1bnr/ppp1k1pp/2np4/5Q2/2BpP3/8/PPP2PPP/RNB1K2R w KQ - 6 9";
     std::string fen = argv[1];
 
     engine::Engine engine(fen);

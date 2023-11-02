@@ -46,13 +46,15 @@ void board::Board::generateFields() {
 	int row = 8;
 	int columnNum = 1;
 
-	for (int i = 0; i < currentPosition.length(); i++) {
+	int len = currentPosition.length();
+	for (int i = 0; i < len; i++) {
 		if (currentPosition[i] == '/') {
 			row--;
 			columnNum = 1;
 		}
 		else if (helpers::Char::isNumeric(currentPosition[i])) {
-			for (int j = 0; j < helpers::Char::castToRealInt(currentPosition[i]); j++) {
+			int len2 = helpers::Char::castToRealInt(currentPosition[i]);
+			for (int j = 0; j < len2; j++) {
 				board::Field newField = board::Field(columnNum, row);
 				newField.setPiece(pieces::PieceFactory::create('-'));
 				this->fields.push_back(newField);
@@ -215,7 +217,29 @@ double board::Board::evaluate(std::string originalColor) {
 	int x = 0;
 	int y = 8;
 
-	for (int i = 0; i < this->fields.size(); i++) {
+	bool isBlackDeveloped = (
+		this->getField(2, 8).pieceName != 'n' &&
+		this->getField(3, 8).pieceName != 'b' &&
+		this->getField(6, 8).pieceName != 'b' &&
+		this->getField(7, 8).pieceName != 'n'
+	);
+
+	bool isWhiteDeveloped = (
+		this->getField(2, 1).pieceName != 'N' &&
+		this->getField(3, 1).pieceName != 'B' &&
+		this->getField(6, 1).pieceName != 'B' &&
+		this->getField(7, 1).pieceName != 'N'
+	);
+
+	if (isBlackDeveloped) {
+		evaluation -= 0.4;
+	}
+
+	if (isWhiteDeveloped) {
+		evaluation += 0.4;
+	}
+
+	for (int i = 0; i < 64; i++) {
 		x = (i % 8) + 1;
 		y = 8 - (i / 8);
 
@@ -223,54 +247,59 @@ double board::Board::evaluate(std::string originalColor) {
 ;
 		if (p == 'p') {
 			evaluation -= engine::Evaluator::PAWN_BASIC_VALUE;
-
-			if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-				evaluation -= 0.1;
 				
-				// 4 najbardziej centralne pola na planszy
-				if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
-					evaluation -= 0.1;
-				}
+			// 4 najbardziej centralne pola na planszy
+			if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
+				evaluation -= 0.4;
+			}
 
+			if (y < 6) {
 				evaluation -= 0.05 * (7 - y);
-
-				for (int posY = y - 1; posY > 1; posY--) {
-					if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_BLACK) { // zdublowane pionki
-						evaluation += 0.35;
-						break;
-					}
+			}
+			else {
+				if (x != 5) {
+					evaluation += 0.2;
 				}
+			}
 
-				bool isSemiPassedPawn = true; // semi passed pawn - pion, który na swojej drodze nie mo¿e zostaæ zablokowany ani zbity przez pionka
-				for (int posY = y - 1; posY > 1; posY--) {
-					if (
-						!this->getField(x, posY).getPiece().isReal ||
-						(this->isFieldValid(x - 1, posY - 1) && this->getField(x - 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) ||
-						(this->isFieldValid(x + 1, posY - 1) && this->getField(x + 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE)
-						) {
-						isSemiPassedPawn = false;
-						break;
-					}
+			for (int posY = y - 1; posY > 1; posY--) {
+				if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_BLACK) { // zdublowane pionki
+					evaluation += 0.3;
+					break;
 				}
+			}
 
-				if (isSemiPassedPawn) {
+			bool isSemiPassedPawn = true; // semi passed pawn - pion, który na swojej drodze nie mo¿e zostaæ zablokowany ani zbity przez pionka
+			for (int posY = y - 1; posY > 1; posY--) {
+				if (
+					!this->getField(x, posY).getPiece().isReal ||
+					(this->isFieldValid(x - 1, posY - 1) && this->getField(x - 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) ||
+					(this->isFieldValid(x + 1, posY - 1) && this->getField(x + 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE)
+					) {
+					isSemiPassedPawn = false;
+					break;
+				}
+			}
+
+			if (isSemiPassedPawn) {
+				if (y < 6) {
 					evaluation -= 0.75 * (7 - y);
 				}
+			}
 
-				if (x != 1) {
-					pieces::Piece pieceOnAttackedField = this->getField(x - 1, y - 1).getPiece();
-					if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_WHITE) {
-						// bonus za atakowanie pionkiem figury
-						evaluation -= 0.1;
-					}
+			if (x != 1) {
+				pieces::Piece pieceOnAttackedField = this->getField(x - 1, y - 1).getPiece();
+				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_WHITE) {
+					// bonus za atakowanie pionkiem figury
+					evaluation -= 0.1;
 				}
+			}
 
-				if (x != 8) {
-					pieces::Piece pieceOnAttackedField = this->getField(x + 1, y - 1).getPiece();
-					if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_WHITE) {
-						// bonus za atakowanie pionkiem figury
-						evaluation -= 0.1;
-					}
+			if (x != 8) {
+				pieces::Piece pieceOnAttackedField = this->getField(x + 1, y - 1).getPiece();
+				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_WHITE) {
+					// bonus za atakowanie pionkiem figury
+					evaluation -= 0.1;
 				}
 			}
 		}
@@ -285,10 +314,14 @@ double board::Board::evaluate(std::string originalColor) {
 
 			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
 
+
+			evaluation -= attackedFields * 0.03;
+			/*
 			if (attackedFields > 10 && y != 1 && y != 8) {
 				evaluation -= 0.15;
 			}
 
+			
 			if (x == 4 || x == 5) {
 				evaluation -= attackedFields * 0.04;
 			}
@@ -298,6 +331,7 @@ double board::Board::evaluate(std::string originalColor) {
 			else {
 				evaluation -= attackedFields * 0.02;
 			}
+			*/
 		}
 		else if (p == 'n') {
 			evaluation -= engine::Evaluator::KNIGH_BASIC_VALUE;
@@ -322,13 +356,15 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
-				evaluation -= 0.1;
-				if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+			if (isBlackDeveloped) {
+				if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
 					evaluation -= 0.1;
+					if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+						evaluation -= 0.06;
 
-					if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
-						evaluation -= 0.1;
+						if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
+							evaluation -= 0.03;
+						}
 					}
 				}
 			}
@@ -351,14 +387,21 @@ double board::Board::evaluate(std::string originalColor) {
 
 			// 4 najbardziej centralne pola na planszy
 			if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
-				evaluation += 0.1;
+				evaluation += 0.4;
 			}
 
-			evaluation += 0.05 * (y - 2);
+			if (y > 3) {
+				evaluation += 0.05 * (y - 2);
+			}
+			else {
+				if (x != 5) {
+					evaluation -= 0.2;
+				}
+			}
 
 			for (int posY = y + 1; posY < 8; posY++) {
 				if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_WHITE) { // zdublowane pionki
-					evaluation -= 0.35;
+					evaluation -= 0.3;
 					break;
 				}
 			}
@@ -376,7 +419,9 @@ double board::Board::evaluate(std::string originalColor) {
 			}
 
 			if (isSemiPassedPawn) {
-				evaluation += 0.75 * (y - 2);
+				if (y > 3) {
+					evaluation += 0.75 * (y - 2);
+				}
 			}
 
 			if (x != 1) {
@@ -406,6 +451,8 @@ double board::Board::evaluate(std::string originalColor) {
 
 			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
 
+			evaluation += attackedFields * 0.03;
+			/*
 			if (attackedFields > 10 && y != 1 && y != 8) {
 				evaluation += 0.15;
 			}
@@ -419,6 +466,7 @@ double board::Board::evaluate(std::string originalColor) {
 			else {
 				evaluation += attackedFields * 0.02;
 			}
+			*/
 		}
 		else if (p == 'N') {
 			evaluation += engine::Evaluator::KNIGH_BASIC_VALUE;
@@ -442,13 +490,15 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
-				evaluation += 0.1;
-				if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+			if (isWhiteDeveloped) {
+				if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
 					evaluation += 0.1;
+					if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
+						evaluation += 0.06;
 
-					if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
-						evaluation += 0.1;
+						if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
+							evaluation += 0.03;
+						}
 					}
 				}
 			}

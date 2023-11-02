@@ -18,12 +18,25 @@ engine::Engine::Engine(std::string fen)
 
 double engine::Engine::calculateMove(move::Move* move, double alpha, double beta, int tempDepth, int maxDepth)
 {
+	
+	bool isCheck = move->makesCheck; // czy jest szach na przeciwniku
+
+	std::ofstream outfile;
+
+	/*outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+
+	std::string tabs = "";
+	for (int t = 0; t < (tempDepth - 1); t++) {
+		tabs += "  ";
+	}
+
+	outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth) + " " + (isCheck ? "CHECK" : "");
+	*/
 	board::Board tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
 	tempBoard.colorOnMove = tempBoard.colorOnMove == FEN::FEN::COLOR_BLACK ? FEN::FEN::COLOR_WHITE : FEN::FEN::COLOR_BLACK;
-	bool isCheck = move->makesCheck; // czy jest szach na przeciwniku
 
-	if (tempDepth == maxDepth) { 
+	if (!isCheck && tempDepth == maxDepth) {
 		double e = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
@@ -39,15 +52,17 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	int LMR2 = {};
 
 	legalMoves = {};
-	for (int level = 0; level < allMoves.size(); level++) {
-		if (level == 1) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
+	int len = allMoves.size();
+	for (int level = 0; level < len; level++) {
+		if (level == 4) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
 			LMR = legalMoves.size();
 		}
-		else if (level == allMoves.size() - 4) {
+		else if (level == allMoves.size() - 2) {
 			LMR2 = legalMoves.size();
 		}
 
-		for (int i = 0; i < allMoves[level].size(); i++) {
+		int len2 = allMoves[level].size();
+		for (int i = 0; i < len2; i++) {
 			tempBoard.makeMove(allMoves[level][i]);
 
 			if (!this->isCheck(tempBoard.colorOnMove)) {
@@ -58,50 +73,70 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		}
 	}
 
+	//outfile << " " + std::to_string(legalMoves.size());
+	//outfile.close();
+
 	if (legalMoves.size() == 0) {
 		tempBoard = tb;
 
 		if (isCheck) {
-			return tempDepth % 2 == 1 ? 1000000 : -1000000;
+			int e = 1000000 - (tempDepth - 1);
+			if (tempDepth % 2 == 0) {
+				e *= -1;
+			}
+
+			return e;
 		}
 		else {
 			return 0;
 		}
 	}
 
+	if (tempDepth == maxDepth) { // isCheck
+		double e = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+		tempBoard = tb;
+		return e;
+	}
+
 	if (tempDepth % 2 == 1) {
 		// przeciwnik
 
 		double value = INFINITY;
-		for (int i = 0; i < legalMoves.size(); i++) {
-			maxDepth = std::min(LMR < i ? 7 : (LMR2<i ? 6 : 5), maxDepth);
+		int len = legalMoves.size();
+		for (int i = 0; i < len; i++) {
+			maxDepth = std::min(LMR < i ? 7 : (LMR2<i ? 6: 5), maxDepth);
 			value = std::min(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
 			if (value == -1000000) {
+				tempBoard = tb;
 				return -1000000;
 			}
 
-			if (value <= alpha) {
+			if (value < alpha) {
 				break;
 			}
+
 			beta = std::min(beta, value);
 		}
 		tempBoard = tb;
 		return value;
 	} else {
 		double value = -1 * INFINITY;
-		for (int i = 0; i < legalMoves.size(); i++) {
+		int len = legalMoves.size();
+		for (int i = 0; i < len; i++) {
 			maxDepth = std::min(LMR < i ? 7 : (LMR2 < i ? 6 : 5), maxDepth);
 
 			value = std::max(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
 			if (value == 1000000) {
+				tempBoard = tb;
 				return 1000000;
 			}
 
-			if (value >= beta) {
+			if (value > beta) {
 				break;
 			}
+
 			alpha = std::max(alpha, value);
 		}
 		tempBoard = tb;
@@ -127,15 +162,17 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	int LMR = {};
 	int LMR2 = {};
 
-	for (int level = 0; level < allMoves.size(); level++) {
-		if (level == 1) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
+	int len = allMoves.size();
+	for (int level = 0; level < len; level++) {
+		if (level == 4) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
 			LMR = legalMoves.size();
 		}
-		else if (level == allMoves.size() - 4) {
+		else if (level == allMoves.size() - 2) {
 			LMR2 = legalMoves.size();
 		}
 
-		for (int i = 0; i < allMoves[level].size(); i++) {
+		int len2 = allMoves[level].size();
+		for (int i = 0; i < len2; i++) {
 			tempBoard.makeMove(allMoves[level][i]);
 
 			if (!this->isCheck(tempBoard.colorOnMove)) {
@@ -155,9 +192,19 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		res.notation = "-";
 	}
 
-	for (int j = 0; j < legalMoves.size(); j++) { // depth 1
+	len = legalMoves.size();
+	for (int j = 0; j < len; j++) { // depth 1
+
+
+		std::ofstream outfile;
+
 		int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
-		value = std::max(value, calculateMove(legalMoves[j], alpha, beta, 1, maxDepth));
+		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth);
+
+		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
+		//outfile << "\n" + legalMoves[j]->getMoveICCF() + " " + std::to_string(ev);
+
+		value = std::max(value, ev);
 		alpha = std::max(alpha, value);
 
 		if (value > maxEval) {
@@ -233,7 +280,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 
 
 			if (piece.pieceName == FEN::FEN::KNIGHT_WHITE || piece.pieceName == FEN::FEN::KNIGHT_BLACK) {
-				for (int km = 0; km < this->knightMoves.size(); km++) {
+				for (int km = 0; km < 8; km++) {
 					int x = field.x + this->knightMoves[km][0];
 					int y = field.y + this->knightMoves[km][1];
 
@@ -354,7 +401,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 			}
 
 			if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
-				for (int km = 0; km < this->kingMoves.size(); km++) {
+				for (int km = 0; km < 8; km++) {
 					int x = field.x + this->kingMoves[km][0];
 					int y = field.y + this->kingMoves[km][1];
 
@@ -384,7 +431,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 
 
 			if (piece.pieceName == FEN::FEN::KNIGHT_WHITE || piece.pieceName == FEN::FEN::KNIGHT_BLACK) {
-				for (int km = 0; km < this->knightMoves.size(); km++) {
+				for (int km = 0; km < 8; km++) {
 					int x = field.x + this->knightMoves[km][0];
 					int y = field.y + this->knightMoves[km][1];
 
@@ -541,7 +588,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 			}
 		
 			if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
-				for (int km = 0; km < this->kingMoves.size(); km++) {
+				for (int km = 0; km < 8; km++) {
 					int x = field.x + this->kingMoves[km][0];
 					int y = field.y + this->kingMoves[km][1];
 					
@@ -1359,7 +1406,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				if (piece.pieceName == FEN::FEN::KNIGHT_BLACK || piece.pieceName == FEN::FEN::KNIGHT_WHITE) {
 					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[i] == 1;
 
-					for (int km = 0; km < this->knightMoves.size(); km++) {
+					for (int km = 0; km < 8; km++) {
 						int x = field.x + this->knightMoves[km][0];
 						int y = field.y + this->knightMoves[km][1];
 						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
@@ -1422,7 +1469,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				// król
 
 				if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
-					for (int km = 0; km < this->kingMoves.size(); km++) {
+					for (int km = 0; km < 8; km++) {
 						int x = field.x + this->kingMoves[km][0];
 						int y = field.y + this->kingMoves[km][1];
 						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
@@ -1450,8 +1497,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	std::vector<move::Move*> castleWithoutCheck = {};
 	std::vector<move::Move*> initiallyRejectedMovesWithoutCheck = {};
 
-	
-	for (int i = 0; i < initiallyRejectedMoves.size(); i++) {
+	int len = initiallyRejectedMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(initiallyRejectedMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1465,7 +1512,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < possibleMoves.size(); i++) {
+	len = possibleMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(possibleMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1479,7 +1527,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < candidatesMoves.size(); i++) {
+	len = candidatesMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(candidatesMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1493,7 +1542,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < castlesMoves.size(); i++) {
+	len = castlesMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(castlesMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1507,7 +1557,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < disadvantageCaptureMoves.size(); i++) {
+	len = disadvantageCaptureMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(disadvantageCaptureMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1521,7 +1572,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < equalCaptureMoves.size(); i++) {
+	len = equalCaptureMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(equalCaptureMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1535,7 +1587,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < advantageCaptureMoves.size(); i++) {
+	len = advantageCaptureMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(advantageCaptureMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1549,7 +1602,8 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	for (int i = 0; i < promotionMoves.size(); i++) {
+	len = promotionMoves.size();
+	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(promotionMoves[i]);
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
@@ -1755,7 +1809,7 @@ bool engine::Engine::isCheck(std::string onColor) {
 
 	// skoczek
 
-	for (int km = 0; km < this->knightMoves.size(); km++) {
+	for (int km = 0; km < 8; km++) {
 		int x = kingX + this->knightMoves[km][0];
 		int y = kingY + this->knightMoves[km][1];
 
