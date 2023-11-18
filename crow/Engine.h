@@ -30,10 +30,11 @@ namespace engine
 	{
 	public:
 		Engine() = default;
-		Engine(std::string fen);
+		Engine(std::string fen, std::string drawPositions);
 		board::Board tempBoard;
 		Evaluator evaluator;
 		FEN::FEN originalFen;
+		std::vector<std::string> drawPositions = {};
 
 		struct bestMoveStructure {
 			std::string notation;

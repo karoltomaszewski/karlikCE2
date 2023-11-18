@@ -48,10 +48,12 @@ namespace board {
 		bool canCaptureOnField(int x, int y);
 		FEN::FEN fen;
 		void makeMove(move::Move*);
-		double evaluate(std::string originalColor);
+		double evaluate(std::string originalColor, move::Move* lastMove);
+		double calculateMoveExtraBonus( move::Move* lastMove);
 		bool isFieldValid(int x, int y);
 		std::string colorOnMove;
 		board::Field getField(int x, int y);
+		std::string getPosition();
 
 		static int calculateIndex(int x, int y);
 

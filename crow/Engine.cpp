@@ -5,14 +5,57 @@
 #include<fstream>
 #include<vector>
 #include<ctime>
+#include <iostream>
 #include<algorithm>
 
-engine::Engine::Engine(std::string fen)
+int my_count(std::string s, char c) {
+	// Count variable
+	int res = 0;
+
+	for (int i = 0; i < s.length(); i++)
+
+		// checking character in string
+		if (s[i] == c)
+			res++;
+
+	return res;
+}
+
+engine::Engine::Engine(std::string fen, std::string drawPositions)
 {
 	this->evaluator = Evaluator(fen);
 	this->originalFen = FEN::FEN(fen);
 	this->originalColor = evaluator.fen.getColor();
 	this->timeStart = std::time(nullptr);
+
+	if (drawPositions != "") {
+		std::string delimiter = ",";
+
+		int whitePawns = my_count(fen, 'P');
+		int blackPawns = my_count(fen, 'p');
+
+		std::vector<std::string> possibleDrawPositions = {};
+
+		size_t pos = 0;
+		while ((pos = drawPositions.find(delimiter)) != std::string::npos) {
+			possibleDrawPositions.push_back(drawPositions.substr(0, pos));
+			drawPositions.erase(0, pos + delimiter.length());
+		}
+
+		possibleDrawPositions.push_back(drawPositions);
+
+		for (int i = possibleDrawPositions.size() - 1; i >= 0; i--) {
+			if (
+				(whitePawns == my_count(possibleDrawPositions[i], 'P')) &&
+				(blackPawns == my_count(possibleDrawPositions[i], 'p'))
+				) {
+				this->drawPositions.push_back(possibleDrawPositions[i]);
+			}
+			else {
+				break;
+			}
+		}
+	}
 }
 
 
@@ -34,10 +77,18 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	*/
 	board::Board tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
+
+	if (tempDepth == 1 && this->drawPositions.size() > 0) {
+		if (std::find(this->drawPositions.begin(), this->drawPositions.end(), tempBoard.getPosition()) != this->drawPositions.end()) {
+			tempBoard = tb;
+			return 0; // threefold-repetition
+		}
+	}
+
 	tempBoard.colorOnMove = tempBoard.colorOnMove == FEN::FEN::COLOR_BLACK ? FEN::FEN::COLOR_WHITE : FEN::FEN::COLOR_BLACK;
 
 	if (!isCheck && tempDepth == maxDepth) {
-		double e = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
 	}
@@ -93,7 +144,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	}
 
 	if (tempDepth == maxDepth) { // isCheck
-		double e = tempBoard.evaluate(this->originalColor) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
 	}
@@ -146,9 +197,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 
 engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 {
-	tempBoard = board::Board(this->originalFen);
-	
-
+	tempBoard = board::Board(this->originalFen);	
 	std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
 
@@ -184,7 +233,8 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	}
 
 	engine::Engine::bestMoveStructure res;
-	std::string bestMove;
+	std::vector<move::Move*> bestMoves;
+
 	double maxEval = -1 * INFINITY;
 
 	if (legalMoves.size() == 0) {
@@ -199,7 +249,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		std::ofstream outfile;
 
 		int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
-		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth);
+		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth) + tb.calculateMoveExtraBonus(legalMoves[j]);
 
 		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
 		//outfile << "\n" + legalMoves[j]->getMoveICCF() + " " + std::to_string(ev);
@@ -207,13 +257,16 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		value = std::max(value, ev);
 		alpha = std::max(alpha, value);
 
-		if (value > maxEval) {
+		if (ev > maxEval) {
 			maxEval = value;
-			bestMove = legalMoves[j]->getMoveICCF();
+			bestMoves = { legalMoves[j] };
 
 			if (value == 1000000) {
 				break;
 			}
+		}
+		else if (ev == maxEval) {
+			bestMoves.push_back(legalMoves[j]);
 		}
 
 		tempBoard = tb;
@@ -224,8 +277,27 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 	}
 
+	if (bestMoves.size() == 1) {
+		res.notation = bestMoves[0]->getMoveICCF();
+	}
+	else if (bestMoves.size() > 1) {
+		double maxEvalOnDepth1 = -1 * INFINITY;
+
+		board::Board tb = tempBoard;
+		for (int i = 0; i < bestMoves.size(); i++) {
+			tempBoard.makeMove(bestMoves[i]);
+			
+			double e = tempBoard.evaluate(this->originalColor, bestMoves[i]) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+			if (e > maxEvalOnDepth1) {
+				maxEvalOnDepth1 = e;
+				res.notation = bestMoves[i]->getMoveICCF();
+			}
+
+			tempBoard = tb;
+		}
+	}
+
 	res.evaluation = maxEval;
-	res.notation = bestMove;
 
 	return res;
 }

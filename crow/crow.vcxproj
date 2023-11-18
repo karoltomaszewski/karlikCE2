@@ -155,6 +155,7 @@
     <ClCompile Include="String.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\x64\Debug\crow.exe" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

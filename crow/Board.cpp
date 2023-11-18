@@ -158,85 +158,106 @@ void board::Board::makeMove(move::Move* move) {
 		}
 
 		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
-		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
 	}
 	else if (move->getType() == "promotion") {
-		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(pieces::PieceFactory::create(move->promotionCode, this->colorOnMove));
-		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+	this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(pieces::PieceFactory::create(move->promotionCode, this->colorOnMove));
+	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
 	}
 	else if (move->getType() == "castle") {
-		if (colorOnMove == FEN::FEN::COLOR_WHITE) {
-			this->canWhiteKingCastle = false;
-			this->canWhiteQueenCastle = false;
+	if (colorOnMove == FEN::FEN::COLOR_WHITE) {
+		this->canWhiteKingCastle = false;
+		this->canWhiteQueenCastle = false;
 
-			this->whiteKingX = move->xTo;
-			this->whiteKingY = move->yTo;
-		}
-		else {
-			this->canBlackKingCastle = false;
-			this->canBlackQueenCastle = false;
+		this->whiteKingX = move->xTo;
+		this->whiteKingY = move->yTo;
+	}
+	else {
+		this->canBlackKingCastle = false;
+		this->canBlackQueenCastle = false;
 
-			this->blackKingX = move->xTo;
-			this->blackKingY = move->yTo;
-		}
+		this->blackKingX = move->xTo;
+		this->blackKingY = move->yTo;
+	}
 
-		// ustawienie króla w dobrym miejscu
-		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
+	// ustawienie króla w dobrym miejscu
+	this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
 
-		// wyczyszczenie pola na którym sta³ król
-		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+	// wyczyszczenie pola na którym sta³ król
+	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
 
-		// ustawienie wie¿y w dobrym miejscu
-		this->fields[(8 - move->yTo) * 8 + (((move->xTo + move->xFrom) / 2) - 1)].setPiece(pieces::Rook(colorOnMove == FEN::FEN::COLOR_WHITE ? 'R' : 'r'));
+	// ustawienie wie¿y w dobrym miejscu
+	this->fields[(8 - move->yTo) * 8 + (((move->xTo + move->xFrom) / 2) - 1)].setPiece(pieces::Rook(colorOnMove == FEN::FEN::COLOR_WHITE ? 'R' : 'r'));
 
-		// wyczyszczenie pola na którym sta³a wie¿a
-		if (move->xTo == 3) {
-			this->fields[(8 - move->yFrom) * 8].setPiece(pieces::NoPiece('-'));
-		}
-		else {
-			this->fields[(8 - move->yFrom) * 8 + 7].setPiece(pieces::NoPiece('-'));
-		}
+	// wyczyszczenie pola na którym sta³a wie¿a
+	if (move->xTo == 3) {
+		this->fields[(8 - move->yFrom) * 8].setPiece(pieces::NoPiece('-'));
+	}
+	else {
+		this->fields[(8 - move->yFrom) * 8 + 7].setPiece(pieces::NoPiece('-'));
+	}
 	}
 	else if (move->getType() == "enPassant") {
-		this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
-		this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
+	this->fields[(8 - move->yTo) * 8 + (move->xTo - 1)].setPiece(movedPiece);
+	this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece('-'));
 
-		// bia³y bije w przelocie 
-		if (move->yTo == 6) {
-			this->fields[24 + (move->xTo - 1)].setPiece(pieces::NoPiece('-'));
-		}
-		else {
-			// czarny bije w przelocie
-			this->fields[32 + (move->xTo - 1)].setPiece(pieces::NoPiece('-'));
-		}
+	// bia³y bije w przelocie 
+	if (move->yTo == 6) {
+		this->fields[24 + (move->xTo - 1)].setPiece(pieces::NoPiece('-'));
+	}
+	else {
+		// czarny bije w przelocie
+		this->fields[32 + (move->xTo - 1)].setPiece(pieces::NoPiece('-'));
+	}
 	}
 }
 
-double board::Board::evaluate(std::string originalColor) {
+double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 	double evaluation = 0.0;
 	int x = 0;
 	int y = 8;
 
-	bool isBlackDeveloped = (
-		this->getField(2, 8).pieceName != 'n' &&
-		this->getField(3, 8).pieceName != 'b' &&
-		this->getField(6, 8).pieceName != 'b' &&
-		this->getField(7, 8).pieceName != 'n'
-	);
+	int blackDevelopedPieces = 0;
+	int whiteDevelopedPieces = 0;
 
-	bool isWhiteDeveloped = (
-		this->getField(2, 1).pieceName != 'N' &&
-		this->getField(3, 1).pieceName != 'B' &&
-		this->getField(6, 1).pieceName != 'B' &&
-		this->getField(7, 1).pieceName != 'N'
-	);
-
-	if (isBlackDeveloped) {
-		evaluation -= 0.4;
+	if (this->getField(2, 8).pieceName != 'n') {
+		evaluation -= 0.12;
+		blackDevelopedPieces++;
 	}
 
-	if (isWhiteDeveloped) {
-		evaluation += 0.4;
+	if (this->getField(3, 8).pieceName != 'b') {
+		evaluation -= 0.12;
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(6, 8).pieceName != 'b') {
+		evaluation -= 0.06;
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(7, 8).pieceName != 'n') {
+		evaluation -= 0.12;
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(2, 1).pieceName != 'N') {
+		evaluation += 0.06;
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(3, 1).pieceName != 'B') {
+		evaluation += 0.12;
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(6, 1).pieceName != 'B') {
+		evaluation += 0.12;
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(7, 1).pieceName != 'N') {
+		evaluation += 0.12;
+		whiteDevelopedPieces++;
 	}
 
 	for (int i = 0; i < 64; i++) {
@@ -244,22 +265,21 @@ double board::Board::evaluate(std::string originalColor) {
 		y = 8 - (i / 8);
 
 		char p = this->fields[i].pieceName;
-;
+		
 		if (p == 'p') {
 			evaluation -= engine::Evaluator::PAWN_BASIC_VALUE;
-				
-			// 4 najbardziej centralne pola na planszy
-			if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
-				evaluation -= 0.4;
+
+			if (this->isFieldValid(x - 1, y + 2) && this->getField(x - 1, y + 2).pieceName == 'p' && !this->getField(x - 1, y + 1).isFieldEmpty && this->getField(x - 1, y + 1).getPiece().power > 1 && !this->getField(x - 1, y + 1).getPiece().isWhite) {
+				evaluation += 0.5;
 			}
 
-			if (y < 6) {
-				evaluation -= 0.05 * (7 - y);
+			if (this->isFieldValid(x + 1, y + 2) && this->getField(x + 1, y + 2).pieceName == 'p' && !this->getField(x - 1, y + 1).isFieldEmpty && this->getField(x + 1, y + 1).getPiece().power > 1 && !this->getField(x + 1, y + 1).getPiece().isWhite) {
+				evaluation += 0.5;
 			}
-			else {
-				if (x != 5) {
-					evaluation += 0.2;
-				}
+
+			// najbardziej centralne pola na planszy
+			if ((x >= 3 && x <= 5) && (y >= 4 && y <= 5)) {
+				evaluation -= 0.6;
 			}
 
 			for (int posY = y - 1; posY > 1; posY--) {
@@ -280,6 +300,12 @@ double board::Board::evaluate(std::string originalColor) {
 					break;
 				}
 			}
+
+			if (y == 6) {
+				evaluation += 0.2;
+			}
+
+			evaluation -= (9 - y) * 0.06;
 
 			if (isSemiPassedPawn) {
 				if (y < 6) {
@@ -306,32 +332,11 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'b') {
 			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
 
-			if ((x == 5 || x == 4) && y == 6) {
-				if (this->getField(x, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK) {
-					evaluation += 0.5; // kara
-				}
-			}
 
 			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
 
 
 			evaluation -= attackedFields * 0.03;
-			/*
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation -= 0.15;
-			}
-
-			
-			if (x == 4 || x == 5) {
-				evaluation -= attackedFields * 0.04;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation -= attackedFields * 0.03;
-			}
-			else {
-				evaluation -= attackedFields * 0.02;
-			}
-			*/
 		}
 		else if (p == 'n') {
 			evaluation -= engine::Evaluator::KNIGH_BASIC_VALUE;
@@ -356,18 +361,11 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			if (isBlackDeveloped) {
-				if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
-					evaluation -= 0.1;
-					if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
-						evaluation -= 0.06;
-
-						if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
-							evaluation -= 0.03;
-						}
-					}
-				}
+			/*
+			if (x != 4 || y != 8) { // not on starting field
+				evaluation += 0.3 * (4 - blackDevelopedPieces);
 			}
+			*/
 		} 
 		else if (p == 'k') {
 			if (x == 7 && y == 8) { // pole po roszadzie
@@ -378,6 +376,8 @@ double board::Board::evaluate(std::string originalColor) {
 				) {
 					evaluation -= 1;
 				}
+
+				evaluation -= 0.2;
 			}
 
 			evaluation -= 10000;
@@ -385,18 +385,18 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'P') {
 			evaluation += engine::Evaluator::PAWN_BASIC_VALUE;
 
-			// 4 najbardziej centralne pola na planszy
-			if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) {
-				evaluation += 0.4;
+			if (this->isFieldValid(x - 1, y - 2) && this->getField(x - 1, y - 2).pieceName == 'P' && !this->getField(x - 1, y - 1).isFieldEmpty && this->getField(x - 1, y - 1).getPiece().power > 1 && this->getField(x - 1, y - 1).getPiece().isWhite) {
+				evaluation -= 0.5;
 			}
 
-			if (y > 3) {
-				evaluation += 0.05 * (y - 2);
+			if (this->isFieldValid(x + 1, y - 2) && this->getField(x + 1, y - 2).pieceName == 'P' && !this->getField(x + 1, y - 1).isFieldEmpty && this->getField(x + 1, y - 1).getPiece().power > 1 && this->getField(x + 1, y - 1).getPiece().isWhite) {
+				evaluation -= 0.5;
 			}
-			else {
-				if (x != 5) {
-					evaluation -= 0.2;
-				}
+
+
+			// najbardziej centralne pola na planszy
+			if ((x >= 3 && x <= 5) && (y >= 4 && y <= 5)) {
+				evaluation += 0.6;
 			}
 
 			for (int posY = y + 1; posY < 8; posY++) {
@@ -424,6 +424,12 @@ double board::Board::evaluate(std::string originalColor) {
 				}
 			}
 
+			if (y == 3) {
+				evaluation -= 0.2;
+			}
+
+			evaluation += y * 0.06;
+
 			if (x != 1) {
 				pieces::Piece pieceOnAttackedField = this->getField(x - 1, y + 1).getPiece();
 				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_BLACK) {
@@ -443,30 +449,9 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'B') {
 			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
 
-			if ((x == 5 || x == 4) && y == 3) {
-				if (this->getField(x, 2).getPiece().pieceName == FEN::FEN::PAWN_WHITE) {
-					evaluation -= 0.5; // kara
-				}
-			}
-
 			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
 
 			evaluation += attackedFields * 0.03;
-			/*
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation += 0.15;
-			}
-
-			if (x == 4 || x == 5) {
-				evaluation += attackedFields * 0.04;
-			}
-			else if (x == 3 || x == 6) {
-				evaluation += attackedFields * 0.03;
-			}
-			else {
-				evaluation += attackedFields * 0.02;
-			}
-			*/
 		}
 		else if (p == 'N') {
 			evaluation += engine::Evaluator::KNIGH_BASIC_VALUE;
@@ -490,18 +475,11 @@ double board::Board::evaluate(std::string originalColor) {
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			if (isWhiteDeveloped) {
-				if (x >= 2 && x <= 7 && y >= 2 && y <= 7) {
-					evaluation += 0.1;
-					if (x >= 3 && x <= 6 && y >= 3 && y <= 6) {
-						evaluation += 0.06;
-
-						if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
-							evaluation += 0.03;
-						}
-					}
-				}
+			/*
+			if (x != 4 || y != 1) { // not on starting field
+				evaluation -= 0.3 * (4 - whiteDevelopedPieces);
 			}
+			*/
 		}
 		else if (p == 'K') {
 			evaluation += 10000;
@@ -514,7 +492,10 @@ double board::Board::evaluate(std::string originalColor) {
 					) {
 					evaluation += 1;
 				}
+
+				evaluation += 0.2;
 			}
+
 		}
 	}
 
@@ -593,4 +574,85 @@ int board::Board::getNumberOfAttackedFieldsInDiagonal(int x, int y)
 	}
 
 	return attackedFields;
+}
+
+std::string board::Board::getPosition() {
+	int empties = 0;
+	std::string fen = "";
+	
+	for (int i = 0; i < 64; i++) {
+		if (i % 8 == 0 && i != 0) {
+			if (empties != 0) {
+				fen += std::to_string(empties);
+				empties = 0;
+			}
+			fen += "/";
+		}
+
+		if (this->fields[i].isFieldEmpty) {
+			empties++;
+		}
+		else {
+			if (empties != 0) {
+				fen += std::to_string(empties);
+				empties = 0;
+			}
+
+			fen += fields[i].getPiece().pieceName;
+		}
+	}
+
+	return fen;
+}
+
+double board::Board::calculateMoveExtraBonus(move::Move* lastMove)
+{
+	if (this->getField(lastMove->xFrom, lastMove->yFrom).pieceName != 'q' && this->getField(lastMove->xFrom, lastMove->yFrom).pieceName != 'Q') {
+		return 0;
+	}
+
+	int blackDevelopedPieces = 0;
+	int whiteDevelopedPieces = 0;
+	double evaluation = 0;
+
+	if (this->getField(2, 8).pieceName != 'n') {
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(3, 8).pieceName != 'b') {
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(6, 8).pieceName != 'b') {
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(7, 8).pieceName != 'n') {
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(2, 1).pieceName != 'N') {
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(3, 1).pieceName != 'B') {
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(6, 1).pieceName != 'B') {
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(7, 1).pieceName != 'N') {
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(lastMove->xFrom, lastMove->yFrom).pieceName == 'q' && this->colorOnMove == FEN::FEN::COLOR_BLACK) {
+		evaluation += 0.3 * (4 - blackDevelopedPieces);
+	}
+	else if (this->getField(lastMove->xFrom, lastMove->yFrom).pieceName == 'Q' && this->colorOnMove == FEN::FEN::COLOR_WHITE) {
+		evaluation -= 0.3 * (4 - whiteDevelopedPieces);
+	}
+
+	return evaluation;
 }
