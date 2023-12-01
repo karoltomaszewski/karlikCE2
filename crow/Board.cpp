@@ -214,366 +214,126 @@ this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece
 
 double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 	double evaluation = 0.0;
+	double earlyGameEvaluation = 0.0;
+	double endGameEvaluation = 0.0;
 	int x = 0;
 	int y = 8;
 
-	int blackDevelopedPieces = 0;
-	int whiteDevelopedPieces = 0;
-
-	if (this->getField(2, 8).pieceName != 'n') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(3, 8).pieceName != 'b') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(6, 8).pieceName != 'b') {
-		evaluation -= 0.06;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(7, 8).pieceName != 'n') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(2, 1).pieceName != 'N') {
-		evaluation += 0.06;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(3, 1).pieceName != 'B') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(6, 1).pieceName != 'B') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(7, 1).pieceName != 'N') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
+	int gamePhase = 0;
 
 	for (int i = 0; i < 64; i++) {
+		if (this->fields[i].isFieldEmpty) {
+			continue;
+		}
+
 		x = (i % 8) + 1;
 		y = 8 - (i / 8);
 
 		char p = this->fields[i].pieceName;
 		
 		if (p == 'p') {
-			evaluation -= engine::Evaluator::PAWN_BASIC_VALUE;
+			earlyGameEvaluation -= 0.82;
+			endGameEvaluation -= 0.94;
 
-			if (this->isFieldValid(x - 1, y + 2) && this->getField(x - 1, y + 2).pieceName == 'p' && !this->getField(x - 1, y + 1).isFieldEmpty && this->getField(x - 1, y + 1).getPiece().power > 1 && !this->getField(x - 1, y + 1).getPiece().isWhite) {
-				evaluation += 0.5;
-			}
-
-			if (this->isFieldValid(x + 1, y + 2) && this->getField(x + 1, y + 2).pieceName == 'p' && !this->getField(x - 1, y + 1).isFieldEmpty && this->getField(x + 1, y + 1).getPiece().power > 1 && !this->getField(x + 1, y + 1).getPiece().isWhite) {
-				evaluation += 0.5;
-			}
-
-			// najbardziej centralne pola na planszy
-			if ((x >= 3 && x <= 5) && (y >= 4 && y <= 5)) {
-				evaluation -= 0.6;
-			}
-
-			for (int posY = y - 1; posY > 1; posY--) {
-				if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_BLACK) { // zdublowane pionki
-					evaluation += 0.3;
-					break;
-				}
-			}
-
-			bool isSemiPassedPawn = true; // semi passed pawn - pion, który na swojej drodze nie mo¿e zostaæ zablokowany ani zbity przez pionka
-			for (int posY = y - 1; posY > 1; posY--) {
-				if (
-					!this->getField(x, posY).getPiece().isReal ||
-					(this->isFieldValid(x - 1, posY - 1) && this->getField(x - 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE) ||
-					(this->isFieldValid(x + 1, posY - 1) && this->getField(x + 1, posY - 1).getPiece().pieceName == FEN::FEN::PAWN_WHITE)
-					) {
-					isSemiPassedPawn = false;
-					break;
-				}
-			}
-
-			if (y == 6) {
-				evaluation += 0.2;
-			}
-
-			evaluation -= (9 - y) * 0.06;
-
-			if (isSemiPassedPawn) {
-				if (y < 6) {
-					evaluation -= 0.75 * (7 - y);
-				}
-			}
-
-			if (x != 1) {
-				pieces::Piece pieceOnAttackedField = this->getField(x - 1, y - 1).getPiece();
-				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_WHITE) {
-					// bonus za atakowanie pionkiem figury
-					evaluation -= 0.1;
-				}
-			}
-
-			if (x != 8) {
-				pieces::Piece pieceOnAttackedField = this->getField(x + 1, y - 1).getPiece();
-				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_WHITE) {
-					// bonus za atakowanie pionkiem figury
-					evaluation -= 0.1;
-				}
-			}
+			earlyGameEvaluation -= this->pawnTable[i ^ 56];
+			endGameEvaluation -= this->egPawnTable[i ^ 56];
 		}
 		else if (p == 'b') {
-			evaluation -= engine::Evaluator::BISHOP_BASIC_VALUE;
+			earlyGameEvaluation -= 3.65;
+			endGameEvaluation -= 2.97;
 
+			earlyGameEvaluation -= this->bishopTable[i ^ 56];
+			endGameEvaluation -= this->egBishopTable[i ^ 56];
 
-			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
-
-
-			evaluation -= attackedFields * 0.03;
+			gamePhase++;
 		}
 		else if (p == 'n') {
-			evaluation -= engine::Evaluator::KNIGH_BASIC_VALUE;
+			earlyGameEvaluation -= 3.37;
+			endGameEvaluation -= 2.81;
 
-			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
-				evaluation -= 0.1;
-				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-					evaluation -= 0.2;
-				}
-			}
-			
+			earlyGameEvaluation -= this->knightTable[i ^ 56];
+			endGameEvaluation -= this->egKnightTable[i ^ 56];
+
+			gamePhase++;
 		}
 		else if (p == 'r') {
-			evaluation -= engine::Evaluator::ROOK_BASIC_VALUE;
+			earlyGameEvaluation -= 4.77;
+			endGameEvaluation -= 5.12;
 
-			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y);
+			earlyGameEvaluation -= this->rookTable[i ^ 56];
+			endGameEvaluation -= this->egRookTable[i ^ 56];
 
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation -= 0.3;
-			}
+			gamePhase += 2;
 		}
 		else if (p == 'q') {
-			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
+			earlyGameEvaluation -= 10.25;
+			endGameEvaluation -= 9.36;
 
-			/*
-			if (x != 4 || y != 8) { // not on starting field
-				evaluation += 0.3 * (4 - blackDevelopedPieces);
-			}
-			*/
+			earlyGameEvaluation -= this->queenTable[i ^ 56];
+			endGameEvaluation -= this->egQueenTable[i ^ 56];
+
+			gamePhase += 4;
 		} 
 		else if (p == 'k') {
-			if (x == 7 && y == 8) { // pole po roszadzie
-				if (
-					this->getField(6, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
-					this->getField(7, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
-					(this->getField(8, 7).getPiece().pieceName == FEN::FEN::PAWN_BLACK || this->getField(8, 6).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
-				) {
-					evaluation -= 1;
-				}
-
-				evaluation -= 0.2;
-			}
-
 			evaluation -= 10000;
+			earlyGameEvaluation -= this->kingTable[i ^ 56];
+			endGameEvaluation -= this->egKingTable[i ^ 56];
 		}
 		else if (p == 'P') {
-			evaluation += engine::Evaluator::PAWN_BASIC_VALUE;
+			earlyGameEvaluation += 0.82;
+			endGameEvaluation += 0.94;
 
-			if (this->isFieldValid(x - 1, y - 2) && this->getField(x - 1, y - 2).pieceName == 'P' && !this->getField(x - 1, y - 1).isFieldEmpty && this->getField(x - 1, y - 1).getPiece().power > 1 && this->getField(x - 1, y - 1).getPiece().isWhite) {
-				evaluation -= 0.5;
-			}
-
-			if (this->isFieldValid(x + 1, y - 2) && this->getField(x + 1, y - 2).pieceName == 'P' && !this->getField(x + 1, y - 1).isFieldEmpty && this->getField(x + 1, y - 1).getPiece().power > 1 && this->getField(x + 1, y - 1).getPiece().isWhite) {
-				evaluation -= 0.5;
-			}
-
-
-			// najbardziej centralne pola na planszy
-			if ((x >= 3 && x <= 5) && (y >= 4 && y <= 5)) {
-				evaluation += 0.6;
-			}
-
-			for (int posY = y + 1; posY < 8; posY++) {
-				if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_WHITE) { // zdublowane pionki
-					evaluation -= 0.3;
-					break;
-				}
-			}
-
-			bool isSemiPassedPawn = true;
-			for (int posY = y + 1; posY < 8; posY++) {
-				if (
-					!this->getField(x, posY).getPiece().isReal ||
-					(this->isFieldValid(x - 1, posY + 1) && this->getField(x - 1, posY + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK) ||
-					(this->isFieldValid(x + 1, posY + 1) && this->getField(x + 1, posY + 1).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
-				) {
-					isSemiPassedPawn = false;
-					break;
-				}
-			}
-
-			if (isSemiPassedPawn) {
-				if (y > 3) {
-					evaluation += 0.75 * (y - 2);
-				}
-			}
-
-			if (y == 3) {
-				evaluation -= 0.2;
-			}
-
-			evaluation += y * 0.06;
-
-			if (x != 1) {
-				pieces::Piece pieceOnAttackedField = this->getField(x - 1, y + 1).getPiece();
-				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_BLACK) {
-					// bonus za atakowanie pionkiem figury
-					evaluation += 0.1;
-				}
-			}
-
-			if (x != 8) {
-				pieces::Piece pieceOnAttackedField = this->getField(x + 1, y + 1).getPiece();
-				if (pieceOnAttackedField.isReal && pieceOnAttackedField.pieceName != FEN::FEN::PAWN_BLACK) {
-					// bonus za atakowanie pionkiem figury
-					evaluation += 0.1;
-				}
-			}
+			earlyGameEvaluation += this->pawnTable[i];
+			endGameEvaluation += this->egPawnTable[i];
 		}
 		else if (p == 'B') {
-			evaluation += engine::Evaluator::BISHOP_BASIC_VALUE;
+			earlyGameEvaluation += 3.65;
+			endGameEvaluation += 2.97;
 
-			int attackedFields = this->getNumberOfAttackedFieldsInDiagonal(x, y);
+			earlyGameEvaluation += this->bishopTable[i];
+			endGameEvaluation += this->egBishopTable[i];
 
-			evaluation += attackedFields * 0.03;
+			gamePhase++;
 		}
 		else if (p == 'N') {
-			evaluation += engine::Evaluator::KNIGH_BASIC_VALUE;
+			earlyGameEvaluation += 3.37;
+			endGameEvaluation += 2.81;
 
-			if ((x >= 2 && x <= 7) && y >= 3 && y <= 7) {
-				evaluation += 0.1;
-				if ((x >= 3 && x <= 6) && (y >= 3 && y <= 6)) {
-					evaluation += 0.2;
-				}
-			}
+			earlyGameEvaluation += this->knightTable[i];
+			endGameEvaluation += this->egKnightTable[i];
+
+			gamePhase++;
 		}
 		else if (p == 'R') {
-			evaluation += engine::Evaluator::ROOK_BASIC_VALUE;
+			earlyGameEvaluation += 4.77;
+			endGameEvaluation += 5.12;
 
-			int attackedFields = this->getNumberOfAttackedFieldsInLines(x, y);
+			earlyGameEvaluation += this->rookTable[i];
+			endGameEvaluation += this->egRookTable[i];
 
-			if (attackedFields > 10 && y != 1 && y != 8) {
-				evaluation += 0.3;
-			}
+			gamePhase += 2;
 		}
 		else if (p == 'Q') {
-			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
+			earlyGameEvaluation += 10.25;
+			endGameEvaluation += 9.36;
 
-			/*
-			if (x != 4 || y != 1) { // not on starting field
-				evaluation -= 0.3 * (4 - whiteDevelopedPieces);
-			}
-			*/
+			earlyGameEvaluation += this->queenTable[i];
+			endGameEvaluation += this->egQueenTable[i];
+
+			gamePhase += 4;
 		}
 		else if (p == 'K') {
 			evaluation += 10000;
-
-			if (x == 7 && y == 1) { // pole po roszadzie
-				if (
-					this->getField(6, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
-					this->getField(7, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK &&
-					(this->getField(8, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK || this->getField(8, 2).getPiece().pieceName == FEN::FEN::PAWN_BLACK)
-					) {
-					evaluation += 1;
-				}
-
-				evaluation += 0.2;
-			}
-
+			earlyGameEvaluation += this->kingTable[i];
+			endGameEvaluation += this->egKingTable[i];
 		}
 	}
 
-	return evaluation;
-}
-
-int board::Board::getNumberOfAttackedFieldsInLines(int x, int y)
-{
-	int attackedFields = 0;
-	for (int posX = x - 1; posX > 0; posX--) {
-		attackedFields++;
-		if (!this->getField(posX, y).isFieldEmpty) {
-			break;
-		}
-	}
-	for (int posX = x + 1; posX < 9; posX++) {
-		attackedFields++;
-		if (!this->getField(posX, y).isFieldEmpty) {
-			break;
-		}
-	}
-	for (int posY = y - 1; posY > 0; posY--) {
-		attackedFields++;
-		if (!this->getField(x, posY).isFieldEmpty) {
-			break;
-		}
-	}
-	for (int posY = y + 1; posY < 9; posY++) {
-		attackedFields++;
-		if (!this->getField(x, posY).isFieldEmpty) {
-			break;
-		}
+	if (gamePhase > 24) {
+		gamePhase = 24;
 	}
 
-	return attackedFields;
-}
-
-int board::Board::getNumberOfAttackedFieldsInDiagonal(int x, int y)
-{
-	int attackedFields = 0;
-	for (int posX = x - 1, posY = y - 1; (posX > 0 && posY > 0);) {
-		attackedFields++;
-		if (!this->getField(posX, y).isFieldEmpty) {
-			break;
-		}
-
-		posX--;
-		posY--;
-	}
-	for (int posX = x + 1, posY = y - 1; (posX < 9 && posY > 0);) {
-		attackedFields++;
-		if (!this->getField(posX, y).isFieldEmpty) {
-			break;
-		}
-
-		posX++;
-		posY--;
-	}
-	for (int posX = x - 1, posY = y + 1; (posX > 0 && posY < 9);) {
-		attackedFields++;
-		if (!this->getField(x, posY).isFieldEmpty) {
-			break;
-		}
-
-		posX--;
-		posY++;
-	}
-	for (int posX = x + 1, posY = y + 1; (posX < 9 && posY < 9);) {
-		attackedFields++;
-		if (!this->getField(x, posY).isFieldEmpty) {
-			break;
-		}
-
-		posX++;
-		posY++;
-	}
-
-	return attackedFields;
+	return ((earlyGameEvaluation * gamePhase) + (endGameEvaluation * (24 - gamePhase))) / 24;
 }
 
 std::string board::Board::getPosition() {

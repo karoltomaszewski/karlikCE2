@@ -87,7 +87,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 
 	tempBoard.colorOnMove = tempBoard.colorOnMove == FEN::FEN::COLOR_BLACK ? FEN::FEN::COLOR_WHITE : FEN::FEN::COLOR_BLACK;
 
-	if (!isCheck && tempDepth == maxDepth) {
+	if (!isCheck && tempDepth >= maxDepth) {
 		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
@@ -99,17 +99,13 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 
 	board::Board tb2 = tempBoard;
 
-	int LMR = {};
-	int LMR2 = {};
+	int LMR = 0;
 
 	legalMoves = {};
 	int len = allMoves.size();
 	for (int level = 0; level < len; level++) {
-		if (level == 4) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
+		if (level == 3) { // LMR after promotions, captures and checks
 			LMR = legalMoves.size();
-		}
-		else if (level == allMoves.size() - 2) {
-			LMR2 = legalMoves.size();
 		}
 
 		int len2 = allMoves[level].size();
@@ -143,7 +139,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		}
 	}
 
-	if (tempDepth == maxDepth) { // isCheck
+	if (tempDepth >= maxDepth) { // isCheck
 		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
@@ -155,7 +151,17 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		double value = INFINITY;
 		int len = legalMoves.size();
 		for (int i = 0; i < len; i++) {
-			maxDepth = std::min(LMR < i ? 7 : (LMR2<i ? 6: 5), maxDepth);
+			if (
+				isCheck ||
+				legalMoves[i]->makesCheck ||
+				i < LMR
+			) {
+				maxDepth = 8;
+			}
+			else {
+				maxDepth = 3;
+			}
+
 			value = std::min(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
 			if (value == -1000000) {
@@ -175,7 +181,16 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		double value = -1 * INFINITY;
 		int len = legalMoves.size();
 		for (int i = 0; i < len; i++) {
-			maxDepth = std::min(LMR < i ? 7 : (LMR2 < i ? 6 : 5), maxDepth);
+			if (
+				isCheck ||
+				legalMoves[i]->makesCheck ||
+				i < LMR
+				) {
+				maxDepth = 8;
+			}
+			else {
+				maxDepth = 3;
+			}
 
 			value = std::max(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
@@ -208,18 +223,9 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	std::vector<move::Move*> legalMoves = {};
 
 	board::Board tb = tempBoard;
-	int LMR = {};
-	int LMR2 = {};
 
 	int len = allMoves.size();
 	for (int level = 0; level < len; level++) {
-		if (level == 4) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
-			LMR = legalMoves.size();
-		}
-		else if (level == allMoves.size() - 2) {
-			LMR2 = legalMoves.size();
-		}
-
 		int len2 = allMoves[level].size();
 		for (int i = 0; i < len2; i++) {
 			tempBoard.makeMove(allMoves[level][i]);
@@ -248,8 +254,8 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 		std::ofstream outfile;
 
-		int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
-		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth) + tb.calculateMoveExtraBonus(legalMoves[j]);
+		int maxDepth = 8;
+		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth);
 
 		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
 		//outfile << "\n" + legalMoves[j]->getMoveICCF() + " " + std::to_string(ev);
@@ -303,16 +309,18 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 }
 
 std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
+
 	std::vector<std::vector<move::Move*>> legalMovesDividedByLevel = {};
 	std::vector<move::Move*> legalMoves = {};
 
 	std::vector<move::Move*> promotionMoves = {};
 	std::vector<move::Move*> castlesMoves = {};
-	std::vector<move::Move*> advantageCaptureMoves = {};
-	std::vector<move::Move*> equalCaptureMoves = {};
-	std::vector<move::Move*> disadvantageCaptureMoves = {};
 	std::vector<move::Move*> checkMoves = {};
 	std::vector<move::Move*> otherMoves = {};
+
+	std::vector<std::vector<move::Move*>> captures = {
+		{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}
+	};
 
 	std::vector<move::Move*> candidatesMoves = {};
 	std::vector<move::Move*> possibleMoves = {};
@@ -888,16 +896,12 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 							}
 						}
 						else {
+							int victimY = field.y + (piece.isWhite ? 1 : -1);
 							if (canPawnEnPassant) {
-								equalCaptureMoves.push_back(new move::EnPassantMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
+								captures[(piece.power - tempBoard.getField(field.x - 1, victimY).getPiece().power) + 8].push_back(new move::EnPassantMove(field.x, field.y, field.x - 1, victimY));
 							}
 							else {
-								if (tempBoard.getField(field.x - 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().power > 1) {
-									advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
-								}
-								else {
-									equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
-								}
+								captures[(piece.power - tempBoard.getField(field.x - 1, victimY).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, field.x - 1, victimY));
 							}
 						}
 					}
@@ -937,16 +941,13 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 							}
 						}
 						else {
+							int victimY = field.y + (piece.isWhite ? 1 : -1);
+
 							if (canPawnEnPassant) {
-								equalCaptureMoves.push_back(new move::EnPassantMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));
+								captures[(piece.power - tempBoard.getField(field.x + 1, victimY).getPiece().power) + 8].push_back(new move::EnPassantMove(field.x, field.y, field.x + 1, victimY));
 							}
 							else {
-								if (tempBoard.getField(field.x + 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().power > 1) {
-									advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));
-								}
-								else {
-									equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));
-								}
+								captures[(piece.power - tempBoard.getField(field.x + 1, victimY).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, field.x + 1, victimY));
 							}
 						}
 					}
@@ -1002,15 +1003,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								if (tempBoard.getField(field.x, y).getPiece().power > power) {
-									advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-								else if (tempBoard.getField(field.x, y).getPiece().power == power) {
-									equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-								else {
-									disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
+								captures[(piece.power - tempBoard.getField(field.x, y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, field.x, y));
 							}
 
 							break;
@@ -1059,15 +1052,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								if (tempBoard.getField(field.x, y).getPiece().power > power) {
-									advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-								else if (tempBoard.getField(field.x, y).getPiece().power == power) {
-									equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-								else {
-									disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
+								captures[(piece.power - tempBoard.getField(field.x, y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, field.x, y));
 							}
 
 							break;
@@ -1115,15 +1100,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
-								if (tempBoard.getField(x, field.y).getPiece().power > power) {
-									advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-								}
-								else if (tempBoard.getField(x, field.y).getPiece().power == power) {
-									equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-								}
-								else {
-									disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-								}
+								captures[(piece.power - tempBoard.getField(x, field.y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, x, field.y));
 							}
 
 							break;
@@ -1171,17 +1148,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
-								if (tempBoard.canCaptureOnField(x, field.y)) {
-									if (tempBoard.getField(x, field.y).getPiece().power > power) {
-										advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-									}
-									else if (tempBoard.getField(x, field.y).getPiece().power == power) {
-										equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-									}
-									else {
-										disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-									}
-								}
+								captures[(piece.power - tempBoard.getField(x, field.y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, x, field.y));
 							}
 
 							break;
@@ -1248,17 +1215,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								if (tempBoard.canCaptureOnField(x, y)) {
-									if (tempBoard.getField(x, y).getPiece().power > power) {
-										advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else if (tempBoard.getField(x, y).getPiece().power == power) {
-										equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
+								captures[(piece.power - tempBoard.getField(x, y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -1315,17 +1272,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								if (tempBoard.canCaptureOnField(x, y)) {
-									if (tempBoard.getField(x, y).getPiece().power > power) {
-										advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else if (tempBoard.getField(x, y).getPiece().power == power) {
-										equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
+								captures[(piece.power - tempBoard.getField(x, y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -1382,17 +1329,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								if (tempBoard.canCaptureOnField(x, y)) {
-									if (tempBoard.getField(x, y).getPiece().power > power) {
-										advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else if (tempBoard.getField(x, y).getPiece().power == power) {
-										equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
+								captures[(piece.power - tempBoard.getField(x, y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -1450,17 +1387,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								if (tempBoard.canCaptureOnField(x, y)) {
-									if (tempBoard.getField(x, y).getPiece().power > power) {
-										advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else if (tempBoard.getField(x, y).getPiece().power == power) {
-										equalCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										disadvantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
+								captures[(piece.power - tempBoard.getField(x, y).getPiece().power) + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -1492,15 +1419,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 								isAttackedByWeaker
 							) {
 								if ((tempBoard.canCaptureOnField(x, y))) {
-									if (tempBoard.getField(x, y).getPiece().power > 3) {
-										advantageCaptureMoves.push_back(move);
-									}
-									else if (tempBoard.getField(x, y).getPiece().power == 3) {
-										equalCaptureMoves.push_back(move);
-									}
-									else {
-										disadvantageCaptureMoves.push_back(move);
-									}
+									captures[(11 - tempBoard.getField(x, y).getPiece().power)].push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
 									bool isFieldProtectedByPawn = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 1;
@@ -1547,7 +1466,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
 							if (fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] == 0) { // inaczej wchodzi pod szacha, bez sensu to liczyæ
 								if (tempBoard.canCaptureOnField(x, y)) {
-									advantageCaptureMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+									captures[0].push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
@@ -1563,9 +1482,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	board::Board tb = tempBoard;
 	
 	std::vector<move::Move*> promotionMovesWithoutCheck = {};
-	std::vector<move::Move*> advantageCapturesWithoutCheck = {};
-	std::vector<move::Move*> equalCapturesWithoutCheck = {};
-	std::vector<move::Move*> disadvantageCapturesWithoutCheck = {};
 	std::vector<move::Move*> castleWithoutCheck = {};
 	std::vector<move::Move*> initiallyRejectedMovesWithoutCheck = {};
 
@@ -1629,49 +1545,23 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	len = disadvantageCaptureMoves.size();
+	std::vector<move::Move*> realCaptures = {};
+
+	len = captures.size();
 	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(disadvantageCaptureMoves[i]);
+		int len2 = captures[i].size();
 
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			disadvantageCaptureMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), disadvantageCaptureMoves[i]);
+		for (int j = 0; j < len2; j++) {
+			tempBoard.makeMove(captures[i][j]);
+
+			if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
+				captures[i][j]->setMakesCheck();
+			}
+
+			realCaptures.push_back(captures[i][j]);
+
+			tempBoard = tb;
 		}
-		else {
-			disadvantageCapturesWithoutCheck.push_back(disadvantageCaptureMoves[i]);
-		}
-
-		tempBoard = tb;
-	}
-
-	len = equalCaptureMoves.size();
-	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(equalCaptureMoves[i]);
-
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			equalCaptureMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), equalCaptureMoves[i]);
-		}
-		else {
-			equalCapturesWithoutCheck.push_back(equalCaptureMoves[i]);
-		}
-
-		tempBoard = tb;
-	}
-
-	len = advantageCaptureMoves.size();
-	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(advantageCaptureMoves[i]);
-
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			advantageCaptureMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), advantageCaptureMoves[i]);
-		}
-		else {
-			advantageCapturesWithoutCheck.push_back(advantageCaptureMoves[i]);
-		}
-
-		tempBoard = tb;
 	}
 
 	len = promotionMoves.size();
@@ -1690,11 +1580,9 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	}
 
 	return {
-		checkMoves,
 		promotionMovesWithoutCheck,
-		advantageCapturesWithoutCheck,
-		equalCapturesWithoutCheck,
-		disadvantageCapturesWithoutCheck,
+		realCaptures,
+		checkMoves,
 		castleWithoutCheck,
 		otherMoves,
 		initiallyRejectedMovesWithoutCheck
@@ -1912,3 +1800,4 @@ bool engine::Engine::doesMoveMakeCheck(move::Move* move) {
 
 	return false;
 }
+
