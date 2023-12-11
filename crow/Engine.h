@@ -5,6 +5,7 @@
 #include "Move.h"
 #include <vector>
 #include "Board.h"
+#include <map>
 
 namespace engine
 {
@@ -49,6 +50,9 @@ namespace engine
 		int minDepth = 1;
 
 		int timeStart = 0;
+
+		std::map<long long int, double> hashTable;
+		int dumpCounter = 0;
 
 		double calculateMove(
 			move::Move* move,

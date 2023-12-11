@@ -61,7 +61,8 @@ engine::Engine::Engine(std::string fen, std::string drawPositions)
 
 double engine::Engine::calculateMove(move::Move* move, double alpha, double beta, int tempDepth, int maxDepth)
 {
-	
+	this->dumpCounter++;
+
 	bool isCheck = move->makesCheck; // czy jest szach na przeciwniku
 
 	std::ofstream outfile;
@@ -78,6 +79,13 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	board::Board tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
 
+	int zorbistHash = tempBoard.getZorbistHash();
+	auto hashVal = this->hashTable.find(zorbistHash);
+	if (hashVal != this->hashTable.end()) {
+		tempBoard = tb;
+		return hashVal->second;
+	}
+
 	if (tempDepth == 1 && this->drawPositions.size() > 0) {
 		if (std::find(this->drawPositions.begin(), this->drawPositions.end(), tempBoard.getPosition()) != this->drawPositions.end()) {
 			tempBoard = tb;
@@ -89,6 +97,8 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 
 	if (!isCheck && tempDepth >= maxDepth) {
 		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+		this->hashTable[zorbistHash] = e;
+
 		tempBoard = tb;
 		return e;
 	}
@@ -141,10 +151,13 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 
 	if (tempDepth >= maxDepth) { // isCheck
 		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+		this->hashTable[zorbistHash] = e;
+
 		tempBoard = tb;
 		return e;
 	}
 
+	bool cutoff = false;
 	if (tempDepth % 2 == 1) {
 		// przeciwnik
 
@@ -156,7 +169,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 				legalMoves[i]->makesCheck ||
 				i < LMR
 			) {
-				maxDepth = 8;
+				maxDepth = 9;
 			}
 			else {
 				maxDepth = 3;
@@ -169,12 +182,14 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 				return -1000000;
 			}
 
-			if (value < alpha) {
+			if (value <= alpha) {
+				cutoff = true;
 				break;
 			}
 
 			beta = std::min(beta, value);
 		}
+		this->hashTable[zorbistHash] = value;
 		tempBoard = tb;
 		return value;
 	} else {
@@ -186,7 +201,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 				legalMoves[i]->makesCheck ||
 				i < LMR
 				) {
-				maxDepth = 8;
+				maxDepth = 9;
 			}
 			else {
 				maxDepth = 3;
@@ -199,12 +214,14 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 				return 1000000;
 			}
 
-			if (value > beta) {
+			if (value >= beta) {
+				cutoff = true;
 				break;
 			}
 
 			alpha = std::max(alpha, value);
 		}
+		this->hashTable[zorbistHash] = value;
 		tempBoard = tb;
 		return value;
 	}	
@@ -254,7 +271,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 
 		std::ofstream outfile;
 
-		int maxDepth = 8;
+		int maxDepth = 9;
 		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth);
 
 		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite

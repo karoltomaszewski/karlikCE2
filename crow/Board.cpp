@@ -5,6 +5,38 @@
 #include<fstream>
 #include<string>
 #include "Engine.h"
+#include <random>
+#include <cmath>
+#include <unordered_map>
+
+int board::Board::getZorbistHash() {
+	std::unordered_map<char, int> symbolMap = {
+		 {'-', 0},
+		 {'p', 1},
+		 {'b', 2},
+		 {'n', 3},
+		 {'r', 4},
+		 {'q', 5},
+		 {'k', 6},
+		 {'P', 7},
+		 {'B', 8},
+		 {'N', 9},
+		 {'R', 10},
+		 {'Q', 11},
+		 {'K', 12},
+	};
+
+	int hash = this->zorbistKeys[0][symbolMap[this->fields[0].getPiece().pieceName]];
+	for (int i = 1; i < 64; i++) {
+		hash ^= this->zorbistKeys[i][symbolMap[this->fields[i].getPiece().pieceName]];
+	}
+
+	if (this->colorOnMove == FEN::FEN::COLOR_BLACK) {
+		hash ^= this->zorbistBlackToMove;
+	}
+
+	return hash;
+}
 
 board::Board::Board(FEN::FEN fen) {
 	this->fen = fen;
@@ -38,6 +70,25 @@ board::Board::Board(FEN::FEN fen) {
 			this->blackKingY = this->fields[i].y;
 		}
 	}
+
+	for (int i = 0; i < 64; i++) {
+		this->zorbistKeys.push_back({});
+
+		for (int j = 0; j < 13; j++) {
+			std::random_device rd;
+			std::mt19937_64 gen(rd());
+			std::uniform_int_distribution<uint64_t> dis;
+
+			this->zorbistKeys[i].push_back(dis(gen));
+
+		}
+	}
+
+	std::random_device rd;
+	std::mt19937_64 gen(rd());
+	std::uniform_int_distribution<uint64_t> dis;
+
+	this->zorbistBlackToMove = dis(gen);
 }
 
 void board::Board::generateFields() {

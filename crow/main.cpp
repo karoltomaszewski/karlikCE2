@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
 
     std::cout << s.notation << std::endl;
     std::cout << std::to_string(s.evaluation) << std::endl;
+    std::cout << std::to_string(engine.dumpCounter) << std::endl;
 
     return 0;
 }

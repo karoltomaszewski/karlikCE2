@@ -4,6 +4,7 @@
 #include "Piece.h"
 #include <vector>
 #include "Move.h"
+#include <unordered_map>
 
 namespace board {
 	class Field {
@@ -41,6 +42,9 @@ namespace board {
 			whiteKingY = board.whiteKingY;
 			blackKingX = board.blackKingX;
 			blackKingY = board.blackKingY;
+
+			zorbistKeys = board.zorbistKeys;
+			zorbistBlackToMove = board.zorbistBlackToMove;
 		}
 		std::vector<Field> fields;
 		bool isFieldEmpty(int x, int y);
@@ -70,6 +74,10 @@ namespace board {
 		bool canEnPassant;
 		int enPassantX;
 		int enPassantY;
+
+		std::vector<std::vector<int>> zorbistKeys;
+		int zorbistBlackToMove;
+		int getZorbistHash();
 
 		double pawnTable[64] = {
 			 0,   0,   0,   0,   0,   0,  0,   0,

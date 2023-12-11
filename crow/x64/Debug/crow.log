@@ -1,31 +1,19 @@
-﻿  Board.cpp
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Board.cpp(27,57): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Board.cpp(49,36): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-  CastleMove.cpp
-  EnPassantMove.cpp
-  Engine.cpp
+﻿  Engine.cpp
 C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(29,29): warning C4244: "=": konwersja z "time_t" do "int", możliwa utrata danych
 C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(47,3): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(105,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(108,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(111,36): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(152,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(182,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(227,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(229,36): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(251,25): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1488,41): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1503,28): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1518,30): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1533,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1550,23): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1552,32): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1567,29): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-  Evaluator.cpp
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Evaluator.cpp(20,22): warning C4244: "inicjowanie": konwersja z "double" do "int", możliwa utrata danych
-  Field.cpp
-  NormalMove.cpp
-  PromotionMove.cpp
-  main.cpp
-  Generowanie kodu...
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(115,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(118,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(121,36): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(165,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(197,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(244,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(246,36): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(268,25): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1505,41): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1520,28): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1535,30): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1550,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1567,23): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1569,32): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(1584,29): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
   crow.vcxproj -> C:\Users\karol\Desktop\porzadek\cppAPI\crow\x64\Debug\crow.exe
