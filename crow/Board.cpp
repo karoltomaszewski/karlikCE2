@@ -165,6 +165,7 @@ int board::Board::calculateIndex(int x, int y) {
 }
 
 void board::Board::makeMove(move::Move* move) {
+	board::Field field = this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)];
 	pieces::Piece movedPiece = this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].getPiece();
 
 	this->canEnPassant = false;

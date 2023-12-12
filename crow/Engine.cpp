@@ -77,6 +77,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth) + " " + (isCheck ? "CHECK" : "");
 	*/
 	board::Board tb = board::Board(tempBoard);
+	tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
 
 	int zorbistHash = tempBoard.getZorbistHash();
@@ -240,6 +241,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	std::vector<move::Move*> legalMoves = {};
 
 	board::Board tb = tempBoard;
+	tb = tempBoard;
 
 	int len = allMoves.size();
 	for (int level = 0; level < len; level++) {
@@ -307,6 +309,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		double maxEvalOnDepth1 = -1 * INFINITY;
 
 		board::Board tb = tempBoard;
+		tb = tempBoard;
 		for (int i = 0; i < bestMoves.size(); i++) {
 			tempBoard.makeMove(bestMoves[i]);
 			
@@ -349,8 +352,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	bool canCastle = false;
 
 	std::vector<int> fieldsDefendetByOpponentFrequency = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	std::vector<int> fieldsDefendetByOpponentMin = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	std::vector<int> fieldsAttackedFrequency = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 	for (int i = 0; i < 64; i++) {
 		board::Field field = tempBoard.fields[i];
@@ -363,164 +364,15 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 
 		if (((piece.isWhite && color == FEN::FEN::COLOR_WHITE) || (!piece.isWhite && color == FEN::FEN::COLOR_BLACK))) {
 			// my
-			if (piece.pieceName == FEN::FEN::PAWN_WHITE || piece.pieceName == FEN::FEN::PAWN_BLACK) {
-				if (tempBoard.isFieldValid(field.x - 1, field.y - (piece.isWhite ? 1 : -1))) {
-					fieldsAttackedFrequency[board::Board::calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1))]++;
-				}
-
-				if (tempBoard.isFieldValid(field.x + 1, field.y - (piece.isWhite ? 1 : -1))) {
-					fieldsAttackedFrequency[board::Board::calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1))]++;
-				}
-
-				continue;
-			}
-
-
-			if (piece.pieceName == FEN::FEN::KNIGHT_WHITE || piece.pieceName == FEN::FEN::KNIGHT_BLACK) {
-				for (int km = 0; km < 8; km++) {
-					int x = field.x + this->knightMoves[km][0];
-					int y = field.y + this->knightMoves[km][1];
-
-					if (tempBoard.isFieldValid(x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
-					}
-				}
-
-				continue;
-			}
-
-
-			if (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
-				int power = (piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::BISHOP_BLACK) ? 3 : 9;
-
-				for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
-					if (tempBoard.isFieldValid(x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(x, y)) {
-						break;
-					}
-
-					x--;
-					y++;
-				}
-
-				for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
-					if (tempBoard.isFieldValid(x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(x, y)) {
-						break;
-					}
-
-					x--;
-					y--;
-				}
-
-				for (int x = (field.x + 1), y = (field.y - 1); (x <= 8 && y >= 1);) {
-					if (tempBoard.isFieldValid(x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(x, y)) {
-						break;
-					}
-
-					x++;
-					y--;
-				}
-
-				for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
-					if (tempBoard.isFieldValid(x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(x, y)) {
-						break;
-					}
-
-					x++;
-					y++;
-				}
-
-
-				if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE) {
-					continue;
-				}
-			}
-
-			if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK) {
-				int power = (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK) ? 5 : 9;
-
-				for (int x = (field.x - 1); x >= 1; x--) {
-					if (tempBoard.isFieldValid(x, field.y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, field.y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(x, field.y)) {
-						break;
-					}
-				}
-
-				for (int x = (field.x + 1); x <= 8; x++) {
-					if (tempBoard.isFieldValid(x, field.y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, field.y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(x, field.y)) {
-						break;
-					}
-				}
-
-				for (int y = (field.y - 1); y >= 1; y--) {
-					if (tempBoard.isFieldValid(field.x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(field.x, y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(field.x, y)) {
-						break;
-					}
-				}
-
-				for (int y = (field.y + 1); y <= 8; y++) {
-					if (tempBoard.isFieldValid(field.x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(field.x, y)]++;
-					}
-
-					if (!tempBoard.isFieldEmpty(field.x, y)) {
-						break;
-					}
-
-					continue;
-				}
-			}
-
-			if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
-				for (int km = 0; km < 8; km++) {
-					int x = field.x + this->kingMoves[km][0];
-					int y = field.y + this->kingMoves[km][1];
-
-					if (tempBoard.isFieldValid(x, y)) {
-						fieldsAttackedFrequency[board::Board::calculateIndex(x, y)]++;
-					}
-
-
-				}
-			}
-
 		}
 		else {
 			if (piece.pieceName == FEN::FEN::PAWN_WHITE || piece.pieceName == FEN::FEN::PAWN_BLACK) {
 				if (tempBoard.isFieldValid(field.x - 1, field.y - (piece.isWhite ? 1 : -1))) {
 					fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1))]++;
-					fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1))] = 1;
 				}
 
 				if (tempBoard.isFieldValid(field.x + 1, field.y - (piece.isWhite ? 1 : -1))) {
 					fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1))]++;
-					fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1))] = 1;
 				}
 
 				continue;
@@ -534,10 +386,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 
 					if (tempBoard.isFieldValid(x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > 3 || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = 3;
-						}
 					}
 				}
 
@@ -551,10 +399,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
 					if (tempBoard.isFieldValid(x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(x, y)) {
@@ -568,10 +412,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int x = (field.x - 1), y = (field.y - 1); (x >= 1 && y >= 1);) {
 					if (tempBoard.isFieldValid(x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(x, y)) {
@@ -585,10 +425,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int x = (field.x + 1), y = (field.y - 1); (x <= 8 && y >= 1);) {
 					if (tempBoard.isFieldValid(x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(x, y)) {
@@ -602,10 +438,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
 					if (tempBoard.isFieldValid(x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(x, y)) {
@@ -628,10 +460,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int x = (field.x - 1); x >= 1; x--) {
 					if (tempBoard.isFieldValid(x, field.y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(x, field.y)) {
@@ -642,10 +470,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int x = (field.x + 1); x <= 8; x++) {
 					if (tempBoard.isFieldValid(x, field.y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(x, field.y)) {
@@ -656,10 +480,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int y = (field.y - 1); y >= 1; y--) {
 					if (tempBoard.isFieldValid(field.x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(field.x, y)) {
@@ -670,10 +490,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				for (int y = (field.y + 1); y <= 8; y++) {
 					if (tempBoard.isFieldValid(field.x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] > power || fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] = power;
-						}
 					}
 
 					if (!tempBoard.isFieldEmpty(field.x, y)) {
@@ -691,10 +507,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 					
 					if (tempBoard.isFieldValid(x, y)) {
 						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)]++;
-
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] = 10000;
-						}
 					}
 
 				}
@@ -774,28 +586,14 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 								if (tempBoard.isFieldEmpty(field.x, field.y + (piece.isWhite ? 2 : -2))) {
 
 									if (field.x == 4 || field.x == 5) {
-										bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 2 : -2))] >= fieldsAttackedFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 2 : -2))];
-
-										if (isFieldProtected) {
-											possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
-										}
-										else {
-											candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
-										}
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
 									}
 									else {
 										if (
 											(tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 3 : -3)) && !tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 3 : -3))) ||
 											(tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 3 : -3)) && !tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 3 : -3)))
 										) {
-											bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 2 : -2))] > fieldsAttackedFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 2 : -2))];
-
-											if (isFieldProtected) {
-												initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
-											}
-											else {
-												candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
-											}
+											initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
 										}
 										else {
 											possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 2 : -2)));
@@ -808,14 +606,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 									(tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 2 : -2))) ||
 									(tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 2 : -2)))
 								) {
-									bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 1 : -1))] > fieldsAttackedFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 1 : -1))];
-
-									if (isFieldProtected) {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
-									}
-									else {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
-									}
+									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
 								}
 								else {
 									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
@@ -826,14 +617,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 									(tempBoard.isFieldValid(field.x - 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x - 1, field.y + (piece.isWhite ? 2 : -2))) ||
 									(tempBoard.isFieldValid(field.x + 1, field.y + (piece.isWhite ? 2 : -2)) && !tempBoard.isFieldEmpty(field.x + 1, field.y + (piece.isWhite ? 2 : -2)))
 								) {
-									bool isFieldProtected = fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 1 : -1))] > fieldsAttackedFrequency[board::Board::calculateIndex(field.x, field.y + (piece.isWhite ? 1 : -1))];
-
-									if (isFieldProtected) {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
-									}
-									else {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
-									}
+									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
 								}
 								else {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y + (piece.isWhite ? 1 : -1)));
@@ -976,47 +760,13 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
 					int power = (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_WHITE) ? 5 : 9;
 
-					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[i] < power && fieldsDefendetByOpponentMin[i] != 0;
-
 					// w pionie do góry
 
 					for (int y = (field.y + 1); y<=8; y++) {
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByWeaker
-							) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-								}
-								else {
-									if (isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-								}
-							}
-							else {
-								if (isFieldProtectedByWeaker) {
-									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-								else {
-									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
@@ -1033,39 +783,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(field.x, y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByWeaker
-							) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-								}
-								else {
-									if (isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-									}
-								}
-							}
-							else {
-								if (isFieldProtectedByWeaker) {
-									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-								else {
-									possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
@@ -1081,39 +799,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByWeaker
-							) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-									}
-								}
-								else {
-									if (isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
-									}
-								}
-							}
-							else {
-								if (isFieldProtectedByWeaker) {
-									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-								}
-								else {
-									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
@@ -1129,39 +815,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						bool isEmpty = tempBoard.isFieldEmpty(x, field.y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK) ||
-								isAttackedByWeaker
-							) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-									}
-								}
-								else {
-									if (isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
-									}
-								}
-							}
-							else {
-								if (isFieldProtectedByWeaker) {
-									initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-								}
-								else {
-									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
@@ -1184,51 +838,12 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 
 					int power = (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE) ? 3 : 9;
 
-					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[i] < power && fieldsDefendetByOpponentMin[i] != 0;
 
 					for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_WHITE) ||
-								(field.y == 8 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_BLACK) ||
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
-							) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-								}							
-							}
-							else {
-								if (isAttackedByWeaker) {
-									if (isFieldProtectedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									if (isFieldProtectedByWeaker) {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
@@ -1247,45 +862,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_WHITE) ||
-								(field.y == 8 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_BLACK) ||
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
-								) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-								}
-							}
-							else {
-								if (isAttackedByWeaker) {
-									if (isFieldProtectedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									if (isFieldProtectedByWeaker) {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
@@ -1304,45 +881,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_WHITE) ||
-								(field.y == 8 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_BLACK) ||
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
-								) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-								}
-							}
-							else {
-								if (isAttackedByWeaker) {
-									if (isFieldProtectedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									if (isFieldProtectedByWeaker) {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
@@ -1362,45 +901,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
 						if (isEmpty) {
-							bool isFieldProtectedByWeaker = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] < power && fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] != 0;
-
-							// starting positions
-							if (
-								(field.y == 1 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_WHITE) ||
-								(field.y == 8 && (field.x == 3 || field.x == 6) && piece.pieceName == FEN::FEN::BISHOP_BLACK) ||
-								(field.y == 1 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_WHITE) ||
-								(field.y == 8 && field.x == 4 && piece.pieceName == FEN::FEN::QUEEN_BLACK)
-								) {
-								if (isFieldProtectedByWeaker) {
-									if (isAttackedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-								}
-							}
-							else {
-								if (isAttackedByWeaker) {
-									if (isFieldProtectedByWeaker) {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-								else {
-									if (isFieldProtectedByWeaker) {
-										initiallyRejectedMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
-									}
-								}
-							}
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
@@ -1420,7 +921,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				// skoczek
 
 				if (piece.pieceName == FEN::FEN::KNIGHT_BLACK || piece.pieceName == FEN::FEN::KNIGHT_WHITE) {
-					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[i] == 1;
 
 					for (int km = 0; km < 8; km++) {
 						int x = field.x + this->knightMoves[km][0];
@@ -1432,24 +932,13 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 							if (
 								tempBoard.canCaptureOnField(x, y) ||
 								(field.y == 1 && (field.x == 2 || field.x == 7) && piece.pieceName == FEN::FEN::KNIGHT_WHITE) ||
-								(field.y == 8 && (field.x == 2 || field.x == 7) && piece.pieceName == FEN::FEN::KNIGHT_BLACK) ||
-								isAttackedByWeaker
+								(field.y == 8 && (field.x == 2 || field.x == 7) && piece.pieceName == FEN::FEN::KNIGHT_BLACK)
 							) {
 								if ((tempBoard.canCaptureOnField(x, y))) {
 									captures[(11 - tempBoard.getField(x, y).getPiece().power)].push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 								else {
-									bool isFieldProtectedByPawn = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 1;
-
-									if (isAttackedByWeaker) {
-										if (isFieldProtectedByPawn) {
-											addTo = "possibleMoves";
-										}
-									}
-
-									if (x == 1 || x == 8 || y == 1 || y == 8) {
-										addTo = "possibleMoves";
-									}
+									addTo = "possibleMoves";
 								}
 							}
 							else {
@@ -1497,6 +986,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	}
 
 	board::Board tb = tempBoard;
+	tb = tempBoard;
 	
 	std::vector<move::Move*> promotionMovesWithoutCheck = {};
 	std::vector<move::Move*> castleWithoutCheck = {};
