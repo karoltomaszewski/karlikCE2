@@ -33,9 +33,10 @@
 */
 int main(int argc, char* argv[])
 {
-    //std::string fen = "r1bq1bnr/ppp1k1pp/2np4/5Q2/2BpP3/8/PPP2PPP/RNB1K2R w KQ - 6 9";
+    //std::string fen = "rn1qkb1r/1pp1ppp1/p2p1Bbp/3P4/4P1PP/2N2P2/PPP5/R2QKBNR b KQkq - 0 9";
     std::string fen = argv[1];
     std::string drawPositions = argv[2];
+    //std::string drawPositions = ""
 
     engine::Engine engine(fen, drawPositions);
 

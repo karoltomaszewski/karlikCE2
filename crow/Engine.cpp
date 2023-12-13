@@ -88,7 +88,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	tempBoard.colorOnMove = tempBoard.colorOnMove == FEN::FEN::COLOR_BLACK ? FEN::FEN::COLOR_WHITE : FEN::FEN::COLOR_BLACK;
 
 	if (!isCheck && tempDepth == maxDepth) {
-		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+		double e = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
 	}
@@ -124,9 +124,6 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		}
 	}
 
-	//outfile << " " + std::to_string(legalMoves.size());
-	//outfile.close();
-
 	if (legalMoves.size() == 0) {
 		tempBoard = tb;
 
@@ -144,7 +141,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	}
 
 	if (tempDepth == maxDepth) { // isCheck
-		double e = tempBoard.evaluate(this->originalColor, move) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+		double e = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
 	}
@@ -200,10 +197,11 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	tempBoard = board::Board(this->originalFen);	
 	std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
+	double currentEval = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 
-	double alpha = -1 * INFINITY;
+	double alpha = currentEval;
 	double beta = INFINITY;
-	double value = -1 * INFINITY;
+	double value = currentEval;
 
 	std::vector<move::Move*> legalMoves = {};
 
@@ -235,7 +233,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	engine::Engine::bestMoveStructure res;
 	std::vector<move::Move*> bestMoves;
 
-	double maxEval = -1 * INFINITY;
+	double maxEval = currentEval;
 
 	if (legalMoves.size() == 0) {
 		res.evaluation = 0;
@@ -245,14 +243,9 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	len = legalMoves.size();
 	for (int j = 0; j < len; j++) { // depth 1
 
-
-		std::ofstream outfile;
-
 		int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
 		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth) + tb.calculateMoveExtraBonus(legalMoves[j]);
 
-		//outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-		//outfile << "\n" + legalMoves[j]->getMoveICCF() + " " + std::to_string(ev);
 
 		value = std::max(value, ev);
 		alpha = std::max(alpha, value);
@@ -287,13 +280,44 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		for (int i = 0; i < bestMoves.size(); i++) {
 			tempBoard.makeMove(bestMoves[i]);
 			
-			double e = tempBoard.evaluate(this->originalColor, bestMoves[i]) * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
+			double e = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 			if (e > maxEvalOnDepth1) {
 				maxEvalOnDepth1 = e;
 				res.notation = bestMoves[i]->getMoveICCF();
 			}
 
 			tempBoard = tb;
+		}
+	}
+	else {
+		len = legalMoves.size();
+		maxEval = -INFINITY;
+		alpha = -INFINITY;
+		value = -INFINITY;
+		beta = INFINITY;
+		for (int j = 0; j < len; j++) { // depth 1
+
+			int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
+			double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth) + tb.calculateMoveExtraBonus(legalMoves[j]);
+
+			value = std::max(value, ev);
+			alpha = std::max(alpha, value);
+
+			if (ev >= maxEval) {
+				maxEval = value;
+				res.notation = legalMoves[j]->getMoveICCF();
+
+				if (value == 1000000) {
+					break;
+				}
+			}
+
+			tempBoard = tb;
+
+			if (std::time(nullptr) - 30 > this->timeStart) {
+				break;
+			}
+
 		}
 	}
 
@@ -1097,10 +1121,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 								}
 								else {
 									if (isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 									}
 									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 									}
 								}
 							}
@@ -1153,10 +1177,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 								}
 								else {
 									if (isAttackedByWeaker) {
-										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
+										candidatesMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 									}
 									else {
-										possibleMoves.push_back(new move::NormalMove(field.x, field.y, field.x, field.y));
+										possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, field.y));
 									}
 								}
 							}
@@ -1891,15 +1915,6 @@ bool engine::Engine::isCheck(std::string onColor) {
 		) {
 			return true;
 		}
-	}
-
-	// król
-
-	if (
-		abs(tempBoard.whiteKingX - tempBoard.blackKingX) <= 1 &&
-		abs(tempBoard.whiteKingY - tempBoard.blackKingY) <= 1
-	) {
-		return true;
 	}
 
 	return false;

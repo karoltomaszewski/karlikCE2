@@ -212,13 +212,24 @@ this->fields[(8 - move->yFrom) * 8 + (move->xFrom - 1)].setPiece(pieces::NoPiece
 	}
 }
 
-double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
+double board::Board::evaluate() {
 	double evaluation = 0.0;
 	int x = 0;
 	int y = 8;
 
 	int blackDevelopedPieces = 0;
 	int whiteDevelopedPieces = 0;
+
+	double pawnTable[64] = {
+			 0,   0,   0,   0,   0,   0,  0,   0,
+			 0.98, 1.34,  0.61,  0.95,  0.68, 1.26, 0.34, -0.11,
+			 -0.06,   0.07,  0.26,  0.31,  0.65,  0.56, 0.25, -0.2,
+			-0.14,  0.13,   0.06,  0.21,  0.33,  0.12, 0.17, -0.23,
+			-0.27,  -0.02,  -0.05,  0.22,  0.27,   0.06, 0.1, -0.25,
+			-0.26,  -0.04,  -0.04, 0,   0,   0.03, 0.33, -0.12,
+			-0.35,  -0.01, -0.20, -0.43, -0.35,  0.24, 0.38, -0.22,
+			  0,   0,   0,   0,   0,   0,  0,   0,
+	};
 
 	if (this->getField(2, 8).pieceName != 'n') {
 		evaluation -= 0.12;
@@ -236,6 +247,16 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 	}
 
 	if (this->getField(7, 8).pieceName != 'n') {
+		evaluation -= 0.12;
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(4, 7).pieceName != 'p') {
+		evaluation -= 0.12;
+		blackDevelopedPieces++;
+	}
+
+	if (this->getField(5, 7).pieceName != 'p') {
 		evaluation -= 0.12;
 		blackDevelopedPieces++;
 	}
@@ -260,6 +281,16 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 		whiteDevelopedPieces++;
 	}
 
+	if (this->getField(4, 7).pieceName != 'P') {
+		evaluation += 0.12;
+		whiteDevelopedPieces++;
+	}
+
+	if (this->getField(5, 7).pieceName != 'P') {
+		evaluation += 0.12;
+		whiteDevelopedPieces++;
+	}
+
 	for (int i = 0; i < 64; i++) {
 		x = (i % 8) + 1;
 		y = 8 - (i / 8);
@@ -275,11 +306,6 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 
 			if (this->isFieldValid(x + 1, y + 2) && this->getField(x + 1, y + 2).pieceName == 'p' && !this->getField(x - 1, y + 1).isFieldEmpty && this->getField(x + 1, y + 1).getPiece().power > 1 && !this->getField(x + 1, y + 1).getPiece().isWhite) {
 				evaluation += 0.5;
-			}
-
-			// najbardziej centralne pola na planszy
-			if ((x >= 3 && x <= 5) && (y >= 4 && y <= 5)) {
-				evaluation -= 0.6;
 			}
 
 			for (int posY = y - 1; posY > 1; posY--) {
@@ -301,11 +327,7 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 				}
 			}
 
-			if (y == 6) {
-				evaluation += 0.2;
-			}
-
-			evaluation -= (9 - y) * 0.06;
+			evaluation -= pawnTable[i ^ 56];
 
 			if (isSemiPassedPawn) {
 				if (y < 6) {
@@ -361,11 +383,9 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			/*
 			if (x != 4 || y != 8) { // not on starting field
-				evaluation += 0.3 * (4 - blackDevelopedPieces);
+				evaluation += 0.3 * (6 - blackDevelopedPieces);
 			}
-			*/
 		} 
 		else if (p == 'k') {
 			if (x == 7 && y == 8) { // pole po roszadzie
@@ -393,12 +413,6 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 				evaluation -= 0.5;
 			}
 
-
-			// najbardziej centralne pola na planszy
-			if ((x >= 3 && x <= 5) && (y >= 4 && y <= 5)) {
-				evaluation += 0.6;
-			}
-
 			for (int posY = y + 1; posY < 8; posY++) {
 				if (this->getField(x, posY).getPiece().pieceName == FEN::FEN::PAWN_WHITE) { // zdublowane pionki
 					evaluation -= 0.3;
@@ -424,11 +438,7 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 				}
 			}
 
-			if (y == 3) {
-				evaluation -= 0.2;
-			}
-
-			evaluation += y * 0.06;
+			evaluation += pawnTable[i];
 
 			if (x != 1) {
 				pieces::Piece pieceOnAttackedField = this->getField(x - 1, y + 1).getPiece();
@@ -475,11 +485,9 @@ double board::Board::evaluate(std::string originalColor, move::Move* lastMove) {
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			/*
-			if (x != 4 || y != 1) { // not on starting field
-				evaluation -= 0.3 * (4 - whiteDevelopedPieces);
+			if (x != 4 || y != 8) { // not on starting field
+				evaluation -= 0.3 * (6 - whiteDevelopedPieces);
 			}
-			*/
 		}
 		else if (p == 'K') {
 			evaluation += 10000;
@@ -647,10 +655,10 @@ double board::Board::calculateMoveExtraBonus(move::Move* lastMove)
 		whiteDevelopedPieces++;
 	}
 
-	if (this->getField(lastMove->xFrom, lastMove->yFrom).pieceName == 'q' && this->colorOnMove == FEN::FEN::COLOR_BLACK) {
+	if (this->getField(lastMove->xTo, lastMove->yTo).pieceName == 'q') {
 		evaluation += 0.3 * (4 - blackDevelopedPieces);
 	}
-	else if (this->getField(lastMove->xFrom, lastMove->yFrom).pieceName == 'Q' && this->colorOnMove == FEN::FEN::COLOR_WHITE) {
+	else if (this->getField(lastMove->xTo, lastMove->yTo).pieceName == 'Q') {
 		evaluation -= 0.3 * (4 - whiteDevelopedPieces);
 	}
 
