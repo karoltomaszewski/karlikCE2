@@ -44,7 +44,7 @@ namespace engine
 		bestMoveStructure findBestMove();
 		std::vector<std::vector<move::Move*>> findAllMovesOfPosition();
 		bool isCheck(std::string onColor);
-		bool doesMoveMakeCheck(move::Move* move);
+		bool didMoveMakeCheck(move::Move* move);
 
 		int minDepth = 1;
 

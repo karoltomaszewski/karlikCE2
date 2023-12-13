@@ -1798,10 +1798,8 @@ bool engine::Engine::isCheck(std::string onColor) {
 	return false;
 }
 
-bool engine::Engine::doesMoveMakeCheck(move::Move* move) {
-	if (move->getType() == "normal" || move->getType() == "enPassant") {
+bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 
-	}
 
 	return false;
 }
