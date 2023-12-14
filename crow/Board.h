@@ -72,7 +72,5 @@ namespace board {
 		int enPassantY;
 	private:
 		void generateFields();
-		int getNumberOfAttackedFieldsInLines(int x, int y);
-		int getNumberOfAttackedFieldsInDiagonal(int x, int y);
 	};
 }

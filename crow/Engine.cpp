@@ -64,17 +64,6 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	
 	bool isCheck = move->makesCheck; // czy jest szach na przeciwniku
 
-	std::ofstream outfile;
-
-	/*outfile.open("dane.txt", std::ios_base::app); // append instead of overwrite
-
-	std::string tabs = "";
-	for (int t = 0; t < (tempDepth - 1); t++) {
-		tabs += "  ";
-	}
-
-	outfile << "\n" + tabs + move->getMoveICCF() + " D" + std::to_string(tempDepth) + " " + (isCheck ? "CHECK" : "");
-	*/
 	board::Board tb = board::Board(tempBoard);
 	tempBoard.makeMove(move);
 
@@ -87,7 +76,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 
 	tempBoard.colorOnMove = tempBoard.colorOnMove == FEN::FEN::COLOR_BLACK ? FEN::FEN::COLOR_WHITE : FEN::FEN::COLOR_BLACK;
 
-	if (!isCheck && tempDepth == maxDepth) {
+	if (!isCheck && tempDepth >= maxDepth) {
 		double e = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
@@ -140,7 +129,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		}
 	}
 
-	if (tempDepth == maxDepth) { // isCheck
+	if (tempDepth >= maxDepth) { // isCheck
 		double e = tempBoard.evaluate() * (this->originalColor == FEN::FEN::COLOR_WHITE ? 1.0 : -1.0);
 		tempBoard = tb;
 		return e;
@@ -152,7 +141,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		double value = INFINITY;
 		int len = legalMoves.size();
 		for (int i = 0; i < len; i++) {
-			maxDepth = std::min(LMR < i ? 7 : (LMR2<i ? 6: 5), maxDepth);
+			maxDepth = i < LMR ? 7 : (i < LMR2 ? 6 : 5);
 			value = std::min(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
 			if (value == -1000000) {
@@ -172,7 +161,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		double value = -1 * INFINITY;
 		int len = legalMoves.size();
 		for (int i = 0; i < len; i++) {
-			maxDepth = std::min(LMR < i ? 7 : (LMR2 < i ? 6 : 5), maxDepth);
+			maxDepth = i < LMR ? 7 : (i < LMR2 ? 6 : 5);
 
 			value = std::max(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
@@ -1499,46 +1488,35 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	std::vector<move::Move*> castleWithoutCheck = {};
 	std::vector<move::Move*> initiallyRejectedMovesWithoutCheck = {};
 
-	int len = initiallyRejectedMoves.size();
+	std::vector<move::Move*> flatCapturesMoves = {};
+
+	int len = capturesMoves.size();
 	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(initiallyRejectedMoves[i]);
+		int len2 = capturesMoves[i].size();
 
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			initiallyRejectedMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), initiallyRejectedMoves[i]);
-		}
-		else {
-			initiallyRejectedMovesWithoutCheck.push_back(initiallyRejectedMoves[i]);
-		}
+		for (int j = 0; j < len2; j++) {
+			flatCapturesMoves.push_back(capturesMoves[i][j]);
 
-		tempBoard = tb;
+			tempBoard.makeMove(capturesMoves[i][j]);
+
+			if (this->didMoveMakeCheck(capturesMoves[i][j])) {
+				capturesMoves[i][j]->setMakesCheck();
+			}
+
+			tempBoard = tb;
+		}
 	}
 
-	len = possibleMoves.size();
+	len = promotionMoves.size();
 	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(possibleMoves[i]);
+		tempBoard.makeMove(promotionMoves[i]);
 
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			possibleMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), possibleMoves[i]);
+		if (this->didMoveMakeCheck(promotionMoves[i])) {
+			promotionMoves[i]->setMakesCheck();
+			checkMoves.push_back(promotionMoves[i]);
 		}
 		else {
-			otherMoves.push_back(possibleMoves[i]);
-		}
-
-		tempBoard = tb;
-	}
-
-	len = candidatesMoves.size();
-	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(candidatesMoves[i]);
-
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			candidatesMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), candidatesMoves[i]);
-		}
-		else {
-			otherMoves.push_back(candidatesMoves[i]);
+			promotionMovesWithoutCheck.push_back(promotionMoves[i]);
 		}
 
 		tempBoard = tb;
@@ -1550,7 +1528,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 
 		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
 			castlesMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), castlesMoves[i]);
+			checkMoves.push_back(castlesMoves[i]);
 		}
 		else {
 			castleWithoutCheck.push_back(castlesMoves[i]);
@@ -1559,44 +1537,55 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	len = promotionMoves.size();
+	len = candidatesMoves.size();
 	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(promotionMoves[i]);
+		tempBoard.makeMove(candidatesMoves[i]);
 
-		if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-			promotionMoves[i]->setMakesCheck();
-			checkMoves.insert(checkMoves.begin(), promotionMoves[i]);
+		if (this->didMoveMakeCheck(candidatesMoves[i])) {
+			candidatesMoves[i]->setMakesCheck();
+			checkMoves.push_back(candidatesMoves[i]);
 		}
 		else {
-			promotionMovesWithoutCheck.push_back(promotionMoves[i]);
+			otherMoves.push_back(candidatesMoves[i]);
 		}
 
 		tempBoard = tb;
 	}
 
-	std::vector<move::Move*> flatCapturesMoves = {};
-
-	len = capturesMoves.size();
+	len = possibleMoves.size();
 	for (int i = 0; i < len; i++) {
-		int len2 = capturesMoves[i].size();
+		tempBoard.makeMove(possibleMoves[i]);
 
-		for (int j = 0; j < len2; j++) {
-			flatCapturesMoves.push_back(capturesMoves[i][j]);
-
-			tempBoard.makeMove(capturesMoves[i][j]);
-
-			if (this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE)) {
-				capturesMoves[i][j]->setMakesCheck();
-			}
-
-			tempBoard = tb;
+		if (this->didMoveMakeCheck(possibleMoves[i])) {
+			possibleMoves[i]->setMakesCheck();
+			checkMoves.push_back(possibleMoves[i]);
 		}
+		else {
+			otherMoves.push_back(possibleMoves[i]);
+		}
+
+		tempBoard = tb;
+	}
+
+	len = initiallyRejectedMoves.size();
+	for (int i = 0; i < len; i++) {
+		tempBoard.makeMove(initiallyRejectedMoves[i]);
+
+		if (this->didMoveMakeCheck(initiallyRejectedMoves[i])) {
+			initiallyRejectedMoves[i]->setMakesCheck();
+			checkMoves.push_back(initiallyRejectedMoves[i]);
+		}
+		else {
+			initiallyRejectedMovesWithoutCheck.push_back(initiallyRejectedMoves[i]);
+		}
+
+		tempBoard = tb;
 	}
 
 	return {
-		checkMoves,
-		promotionMovesWithoutCheck,
 		flatCapturesMoves,
+		promotionMovesWithoutCheck,
+		checkMoves,
 		castleWithoutCheck,
 		otherMoves,
 		initiallyRejectedMovesWithoutCheck
@@ -1795,11 +1784,185 @@ bool engine::Engine::isCheck(std::string onColor) {
 		}
 	}
 
+	// król
+
+	if (
+		abs(tempBoard.whiteKingX - tempBoard.blackKingX) <= 1 &&
+		abs(tempBoard.whiteKingY - tempBoard.blackKingY) <= 1
+		) {
+		return true;
+	}
+
 	return false;
 }
 
 bool engine::Engine::didMoveMakeCheck(move::Move* move) {
+	pieces::Piece piece = tempBoard.getField(move->xTo, move->yTo).getPiece();
 
+	int opponentKingX;
+	int opponentKingY;
+	if (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) {
+		opponentKingX = tempBoard.blackKingX;
+		opponentKingY = tempBoard.blackKingY;
+	}
+	else {
+		opponentKingX = tempBoard.whiteKingX;
+		opponentKingY = tempBoard.whiteKingY;
+	}
+	
+	// szachy bezpoœrednie
+
+	if (piece.pieceName == FEN::FEN::PAWN_WHITE) {
+		if (move->yTo + 1 == opponentKingY) {
+			if (abs(move->xTo - opponentKingX) == 1) {
+				return true;
+			}
+		}
+
+		return this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
+	}
+
+	if (piece.pieceName == FEN::FEN::PAWN_BLACK) {
+		if (move->yTo - 1 == opponentKingY) {
+			if (abs(move->xTo - opponentKingX) == 1) {
+				return true;
+			}
+		}
+	} else if (piece.pieceName == FEN::FEN::KNIGHT_WHITE || piece.pieceName == FEN::FEN::KNIGHT_BLACK) {
+		int xDiff = abs(move->xTo - opponentKingX);
+		int yDiff = abs(move->yTo - opponentKingY);
+
+		if ((xDiff == 1 && yDiff == 2) || (xDiff = 2 && yDiff == 1)) {
+			return true;
+		}
+	}
+	else {
+		if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
+			int xDiff = move->xTo - opponentKingX;
+			int yDiff = move->yTo - opponentKingY;
+
+			if (abs(xDiff) == abs(yDiff)) {
+				int xInc = xDiff < 0 ? 1 : -1;
+				int yInc = yDiff < 0 ? 1 : -1;
+
+
+				for (int x = move->xTo, y = move->yTo; ; ) {
+					x += xInc;
+					y += yInc;
+
+					if (!tempBoard.getField(x, y).isFieldEmpty) {
+						if (x == opponentKingX) {
+							return true;
+						}
+						else {
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
+			int xDiff = move->xTo - opponentKingX;
+			int yDiff = move->yTo - opponentKingY;
+
+			if (xDiff * yDiff == 0) {
+				int xInc = xDiff < 0 ? 1 : (xDiff == 0 ? 0 : -1);
+				int yInc = yDiff < 0 ? 1 : (yDiff == 0 ? 0 : -1);
+
+				for (int x = move->xTo, y = move->yTo; ; ) {
+					x += xInc;
+					y += yInc;
+
+					if (!tempBoard.getField(x, y).isFieldEmpty) {
+						if (x == opponentKingX && y == opponentKingY) {
+							return true;
+						}
+						else {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	// szachy z ods³ony
+
+	// szach z ods³ony grozi tylko gdy przesuniêta figura sta³a na tej samej prostej (pion, poziom, skos) co król
+	// nie mog³a tak¿e staæ na skrajnym polu
+
+	if (move->xFrom == 1 || move->xFrom == 8 || move->yFrom == 1 || move->yFrom == 8) {
+		return false;
+	}
+
+	int xDiff = opponentKingX - move->xFrom;
+	int yDiff = opponentKingY - move->yFrom;
+
+	// sta³y na wspólnym skosie (grozi szach od goñca lub hetmana)
+	if (abs(xDiff) == abs(yDiff)) {
+		int xInc = xDiff < 0 ? 1 : -1;
+		int yInc = yDiff < 0 ? 1 : -1;
+
+		for (int x = opponentKingX, y = opponentKingY; (x > 1 && x < 8 && y > 1 && y < 8);) {
+			x += xInc;
+			y += yInc;
+
+			if (!tempBoard.getField(x, y).isFieldEmpty) {
+				if (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) {
+					return tempBoard.getField(x, y).pieceName == FEN::FEN::BISHOP_BLACK || tempBoard.getField(x, y).pieceName == FEN::FEN::QUEEN_BLACK;
+				}
+				else {
+					return tempBoard.getField(x, y).pieceName == FEN::FEN::BISHOP_WHITE || tempBoard.getField(x, y).pieceName == FEN::FEN::QUEEN_WHITE;
+				}
+			}
+		}
+	}
+
+	// sta³y na wspólnym pionie (grozi szach od wie¿y lub hetmana)
+	if (xDiff == 0) {
+		if (move->xFrom == move->xTo) {
+			return false;
+		}
+
+		int yInc = yDiff < 0 ? 1 : -1;
+
+		for (int y = opponentKingY; (y > 1 && y < 8); ) {
+			y += yInc;
+
+			if (!tempBoard.getField(opponentKingX, y).isFieldEmpty) {
+				if (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) {
+					return tempBoard.getField(opponentKingX, y).pieceName == FEN::FEN::ROOK_BLACK || tempBoard.getField(opponentKingX, y).pieceName == FEN::FEN::QUEEN_BLACK;
+				}
+				else {
+					return tempBoard.getField(opponentKingX, y).pieceName == FEN::FEN::ROOK_WHITE || tempBoard.getField(opponentKingX, y).pieceName == FEN::FEN::QUEEN_WHITE;
+				}
+			}
+		}
+	}
+
+	// sta³y na wspólnym poziomie (grozi szach od wie¿y lub hetmana)
+	if (yDiff == 0) {
+		if (move->yFrom == move->yTo) {
+			return false;
+		}
+
+		int xInc = xDiff < 0 ? 1 : -1;
+
+		for (int x = opponentKingX; (x > 1 && x < 8); ) {
+			x += xInc;
+
+			if (!tempBoard.getField(x, opponentKingY).isFieldEmpty) {
+				if (tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE) {
+					return tempBoard.getField(x, opponentKingY).pieceName == FEN::FEN::ROOK_BLACK || tempBoard.getField(x, opponentKingY).pieceName == FEN::FEN::QUEEN_BLACK;
+				}
+				else {
+					return tempBoard.getField(x, opponentKingY).pieceName == FEN::FEN::ROOK_WHITE || tempBoard.getField(x, opponentKingY).pieceName == FEN::FEN::QUEEN_WHITE;
+				}
+			}
+		}
+	}
 
 	return false;
 }
