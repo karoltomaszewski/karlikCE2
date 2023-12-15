@@ -7,9 +7,7 @@
 #include "Engine.h"
 
 board::Board::Board(FEN::FEN fen) {
-	this->fen = fen;
-
-	this->generateFields();
+	this->generateFields(fen);
 	this->colorOnMove = fen.getColor();
 
 	this->canWhiteKingCastle = fen.getCastleInfo().find("K") != std::string::npos;
@@ -40,8 +38,8 @@ board::Board::Board(FEN::FEN fen) {
 	}
 }
 
-void board::Board::generateFields() {
-	std::string currentPosition = this->fen.getPosition();
+void board::Board::generateFields(FEN::FEN fen) {
+	std::string currentPosition = fen.getPosition();
 
 	int row = 8;
 	int columnNum = 1;

@@ -27,7 +27,6 @@ namespace board {
 		Board(FEN::FEN fen);
 		Board(const board::Board& board) {
 			fields = board.fields;
-			fen = board.fen;
 			colorOnMove = board.colorOnMove;
 			canWhiteKingCastle = board.canWhiteKingCastle;
 			canWhiteQueenCastle = board.canWhiteQueenCastle;
@@ -46,7 +45,6 @@ namespace board {
 		bool isFieldEmpty(int x, int y);
 		bool isFieldOccupiedByOpponentsPiece(int x, int y);
 		bool canCaptureOnField(int x, int y);
-		FEN::FEN fen;
 		void makeMove(move::Move*);
 		double evaluate();
 		double calculateMoveExtraBonus( move::Move* lastMove);
@@ -71,6 +69,6 @@ namespace board {
 		int enPassantX;
 		int enPassantY;
 	private:
-		void generateFields();
+		void generateFields(FEN::FEN fen);
 	};
 }
