@@ -1,17 +1,16 @@
 ﻿  Engine.cpp
 C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(29,29): warning C4244: "=": konwersja z "time_t" do "int", możliwa utrata danych
 C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(47,3): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(93,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(96,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(99,28): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(131,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(151,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(188,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(203,25): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(253,26): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(869,32): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(871,37): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(890,29): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(907,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
-C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(922,28): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(92,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(95,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(127,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(148,30): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(185,27): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(200,25): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(258,26): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(874,32): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(876,37): warning C4267: "inicjowanie": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(895,29): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(912,27): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\karol\Desktop\porzadek\cppAPI\crow\crow\Engine.cpp(927,28): warning C4267: "=": konwersja z "size_t" do "int", możliwa utrata danych
   crow.vcxproj -> C:\Users\karol\Desktop\porzadek\cppAPI\crow\x64\Debug\crow.exe

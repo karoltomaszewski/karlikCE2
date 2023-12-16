@@ -87,16 +87,12 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 	std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
 	int LMR = {};
-	int LMR2 = {};
 
 	legalMoves = {};
 	int len = allMoves.size();
 	for (int level = 0; level < len; level++) {
 		if (level == 3) { // ruchy dające szacha dostają bonus (d=8), reszta nie (d=6)
 			LMR = legalMoves.size();
-		}
-		else if (level == allMoves.size() - 1) {
-			LMR2 = legalMoves.size();
 		}
 
 		legalMoves.insert(legalMoves.end(), allMoves[level].begin(), allMoves[level].end());
@@ -130,7 +126,8 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		double value = INFINITY;
 		int len = legalMoves.size();
 		for (int i = 0; i < len; i++) {
-			maxDepth = i < LMR ? 7 : (i < LMR2 ? 6 : 5);
+			maxDepth = (i < LMR || isCheck) ? 8 : 4;
+
 			value = std::min(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
 			if (value == -1000000) {
@@ -150,7 +147,7 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 		double value = -1 * INFINITY;
 		int len = legalMoves.size();
 		for (int i = 0; i < len; i++) {
-			maxDepth = i < LMR ? 7 : (i < LMR2 ? 6 : 5);
+			maxDepth = (i < LMR || isCheck) ? 8 : 4;
 
 			value = std::max(value, calculateMove(legalMoves[i], alpha, beta, tempDepth + 1, maxDepth));
 
@@ -201,6 +198,14 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	}
 
 	len = legalMoves.size();
+
+	if (len == 1) {
+		res.evaluation = 0;
+		res.notation = legalMoves[0]->getMoveICCF();
+
+		return res;
+	}
+
 	for (int j = 0; j < len; j++) { // depth 1
 
 		int maxDepth = 7;
@@ -1231,11 +1236,6 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 	// szachy z odsłony
 
 	// szach z odsłony grozi tylko gdy przesunięta figura stała na tej samej prostej (pion, poziom, skos) co król
-	// nie mogła także stać na skrajnym polu
-
-	if (move->xFrom == 1 || move->xFrom == 8 || move->yFrom == 1 || move->yFrom == 8) {
-		return false;
-	}
 
 	int xDiff = opponentKingX - move->xFrom;
 	int yDiff = opponentKingY - move->yFrom;
