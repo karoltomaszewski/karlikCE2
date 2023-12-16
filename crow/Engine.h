@@ -45,6 +45,7 @@ namespace engine
 		std::vector<std::vector<move::Move*>> findAllMovesOfPosition();
 		bool isCheck(std::string onColor);
 		bool didMoveMakeCheck(move::Move* move);
+		bool didMoveExposedMyKing(move::Move* move);
 
 		int minDepth = 1;
 

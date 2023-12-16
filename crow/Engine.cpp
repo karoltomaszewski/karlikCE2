@@ -1,4 +1,4 @@
-#include "Engine.h"
+ï»¿#include "Engine.h"
 #include "Helpers.h"
 #include "Board.h"
 #include "FEN.h"
@@ -86,31 +86,20 @@ double engine::Engine::calculateMove(move::Move* move, double alpha, double beta
 
 	std::vector<std::vector<move::Move*>> allMoves = this->findAllMovesOfPosition();
 
-	board::Board tb2 = tempBoard;
-
 	int LMR = {};
 	int LMR2 = {};
 
 	legalMoves = {};
 	int len = allMoves.size();
 	for (int level = 0; level < len; level++) {
-		if (level == 3) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
+		if (level == 3) { // ruchy dajÄ…ce szacha dostajÄ… bonus (d=8), reszta nie (d=6)
 			LMR = legalMoves.size();
 		}
-		else if (level == allMoves.size() - 2) {
+		else if (level == allMoves.size() - 1) {
 			LMR2 = legalMoves.size();
 		}
 
-		int len2 = allMoves[level].size();
-		for (int i = 0; i < len2; i++) {
-			tempBoard.makeMove(allMoves[level][i]);
-
-			if (!this->isCheck(tempBoard.colorOnMove)) {
-				legalMoves.push_back(allMoves[level][i]);
-			}
-
-			tempBoard = tb2;
-		}
+		legalMoves.insert(legalMoves.end(), allMoves[level].begin(), allMoves[level].end());
 	}
 
 	if (legalMoves.size() == 0) {
@@ -195,28 +184,10 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	std::vector<move::Move*> legalMoves = {};
 
 	board::Board tb = tempBoard;
-	int LMR = {};
-	int LMR2 = {};
 
 	int len = allMoves.size();
 	for (int level = 0; level < len; level++) {
-		if (level == 3) { // ruchy daj¹ce szacha dostaj¹ bonus (d=8), reszta nie (d=6)
-			LMR = legalMoves.size();
-		}
-		else if (level == allMoves.size() - 2) {
-			LMR2 = legalMoves.size();
-		}
-
-		int len2 = allMoves[level].size();
-		for (int i = 0; i < len2; i++) {
-			tempBoard.makeMove(allMoves[level][i]);
-
-			if (!this->isCheck(tempBoard.colorOnMove)) {
-				legalMoves.push_back(allMoves[level][i]);
-			}
-
-			tempBoard = tb;
-		}
+		legalMoves.insert(legalMoves.end(), allMoves[level].begin(), allMoves[level].end());
 	}
 
 	engine::Engine::bestMoveStructure res;
@@ -232,7 +203,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	len = legalMoves.size();
 	for (int j = 0; j < len; j++) { // depth 1
 
-		int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
+		int maxDepth = 7;
 		double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth) + tb.calculateMoveExtraBonus(legalMoves[j]);
 
 
@@ -286,7 +257,7 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 		beta = INFINITY;
 		for (int j = 0; j < len; j++) { // depth 1
 
-			int maxDepth = (j < LMR) ? 7 : ((j < LMR2) ? 6 : 5);
+			int maxDepth = 7;
 			double ev = calculateMove(legalMoves[j], alpha, beta, 1, maxDepth) + tb.calculateMoveExtraBonus(legalMoves[j]);
 
 			value = std::max(value, ev);
@@ -315,6 +286,10 @@ engine::Engine::bestMoveStructure engine::Engine::findBestMove()
 	return res;
 }
 
+int calculateCaputreIndex(int power, int opPower, bool isProtected) {
+	return 9 - opPower + (isProtected ? power : 0);
+}
+
 std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	std::vector<move::Move*> legalMoves = {};
 
@@ -323,11 +298,9 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	std::vector<move::Move*> checkMoves = {};
 	std::vector<move::Move*> otherMoves = {};
 
-	std::vector<move::Move*> candidatesMoves = {};
 	std::vector<move::Move*> possibleMoves = {};
-	std::vector<move::Move*> initiallyRejectedMoves = {};
 	std::vector<std::vector<move::Move*>> capturesMoves = {
-		{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}
+		{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}, {}
 	};
 
 	std::string color = tempBoard.colorOnMove;
@@ -523,10 +496,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 					int y = field.y + this->kingMoves[km][1];
 
 					if (tempBoard.isFieldValid(x, y)) {
-						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, field.y)]++;
+						fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)]++;
 
-						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] == 0) {
-							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, field.y)] = 10000;
+						if (fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 0) {
+							fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] = 10000;
 						}
 					}
 
@@ -548,19 +521,19 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 			isKingChecked = fieldsDefendetByOpponentFrequency[4] > 0;
 		}
 
-		if (!isKingChecked) { // król nie jest szachowany
+		if (!isKingChecked) { // krÃ³l nie jest szachowany
 			if (color == FEN::FEN::COLOR_WHITE) {
 				if (tempBoard.canWhiteKingCastle) {
-					if (!tempBoard.fields[61].getPiece().isReal && !tempBoard.fields[62].getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste						
-						if (fieldsDefendetByOpponentFrequency[61] == 0 && fieldsDefendetByOpponentFrequency[62] == 0) { // sprawdzanie czy pole przez które musi przejœæ król nie jest szachowane i czy docelowe jest szachowane
+					if (!tempBoard.fields[61].getPiece().isReal && !tempBoard.fields[62].getPiece().isReal) { // pola miÄ™dzy krÃ³lem, a wieÅ¼Ä… muszÄ… byÄ‡ puste						
+						if (fieldsDefendetByOpponentFrequency[61] == 0 && fieldsDefendetByOpponentFrequency[62] == 0) { // sprawdzanie czy pole przez ktÃ³re musi przejÅ›Ä‡ krÃ³l nie jest szachowane i czy docelowe jest szachowane
 							castlesMoves.push_back(new move::CastleMove(5, 1, 7, 1)); // od razu do legalMoves
 						}
 					}
 				}
 
 				if (tempBoard.canWhiteQueenCastle) {
-					if (!tempBoard.fields[59].getPiece().isReal && !tempBoard.fields[58].getPiece().isReal && !tempBoard.fields[57].getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
-						if (fieldsDefendetByOpponentFrequency[59] == 0 && fieldsDefendetByOpponentFrequency[58] == 0) {  // sprawdzanie czy pole przez które musi przejœæ król nie jest szachowane i czy docelowe jest szachowane
+					if (!tempBoard.fields[59].getPiece().isReal && !tempBoard.fields[58].getPiece().isReal && !tempBoard.fields[57].getPiece().isReal) { // pola miÄ™dzy krÃ³lem, a wieÅ¼Ä… muszÄ… byÄ‡ puste
+						if (fieldsDefendetByOpponentFrequency[59] == 0 && fieldsDefendetByOpponentFrequency[58] == 0) {  // sprawdzanie czy pole przez ktÃ³re musi przejÅ›Ä‡ krÃ³l nie jest szachowane i czy docelowe jest szachowane
 							castlesMoves.push_back(new move::CastleMove(5, 1, 3, 1));  // od razu do legalMoves
 						}
 					}
@@ -568,16 +541,16 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 			}
 			else {
 				if (tempBoard.canBlackKingCastle) {
-					if (!tempBoard.fields[5].getPiece().isReal && !tempBoard.fields[6].getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
-						if (fieldsDefendetByOpponentFrequency[5] == 0 && fieldsDefendetByOpponentFrequency[6] == 0) { // sprawdza czy król po ruchu nie bêdzie szachowany
+					if (!tempBoard.fields[5].getPiece().isReal && !tempBoard.fields[6].getPiece().isReal) { // pola miÄ™dzy krÃ³lem, a wieÅ¼Ä… muszÄ… byÄ‡ puste
+						if (fieldsDefendetByOpponentFrequency[5] == 0 && fieldsDefendetByOpponentFrequency[6] == 0) { // sprawdza czy krÃ³l po ruchu nie bÄ™dzie szachowany
 							castlesMoves.push_back(new move::CastleMove(5, 8, 7, 8));
 						}
 					}
 				}
 
 				if (tempBoard.canBlackQueenCastle) {
-					if (!tempBoard.fields[3].getPiece().isReal && !tempBoard.fields[2].getPiece().isReal && !tempBoard.fields[1].getPiece().isReal) { // pola miêdzy królem, a wie¿¹ musz¹ byæ puste
-						if (fieldsDefendetByOpponentFrequency[3] == 0 && fieldsDefendetByOpponentFrequency[2] == 0) { // sprawdza czy król po ruchu nie bêdzie szachowany
+					if (!tempBoard.fields[3].getPiece().isReal && !tempBoard.fields[2].getPiece().isReal && !tempBoard.fields[1].getPiece().isReal) { // pola miÄ™dzy krÃ³lem, a wieÅ¼Ä… muszÄ… byÄ‡ puste
+						if (fieldsDefendetByOpponentFrequency[3] == 0 && fieldsDefendetByOpponentFrequency[2] == 0) { // sprawdza czy krÃ³l po ruchu nie bÄ™dzie szachowany
 							castlesMoves.push_back(new move::CastleMove(5, 8, 3, 8));
 						}
 					}
@@ -626,10 +599,13 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (canPawnEnPassant) {
-								capturesMoves[8].push_back(new move::EnPassantMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
+								int captureIndex = calculateCaputreIndex(1, 1, fieldsDefendetByOpponentFrequency[tempBoard.calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1))] > 0);
+								capturesMoves[captureIndex].push_back(new move::EnPassantMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
 							}
 							else {
-								int captureIndex = piece.power - tempBoard.getField(field.x - 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().power + 8;
+								int fieldIndex = tempBoard.calculateIndex(field.x - 1, field.y + (piece.isWhite ? 1 : -1));
+								int captureIndex = calculateCaputreIndex(1, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
 								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, field.x - 1, field.y + (piece.isWhite ? 1 : -1)));
 							}
 						}
@@ -646,10 +622,13 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (canPawnEnPassant) {
-								capturesMoves[8].push_back(new move::EnPassantMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));
+								int captureIndex = calculateCaputreIndex(1, 1, fieldsDefendetByOpponentFrequency[tempBoard.calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1))] > 0);
+								capturesMoves[captureIndex].push_back(new move::EnPassantMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));
 							}
 							else {
-								int captureIndex = piece.power - tempBoard.getField(field.x + 1, field.y + (piece.isWhite ? 1 : -1)).getPiece().power + 8;
+								int fieldIndex = tempBoard.calculateIndex(field.x + 1, field.y + (piece.isWhite ? 1 : -1));
+								int captureIndex = calculateCaputreIndex(1, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
 								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, field.x + 1, field.y + (piece.isWhite ? 1 : -1)));
 							}
 						}
@@ -658,10 +637,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 					continue;
 				}
 				
-				// pion i poziom - wie¿a i hetman
+				// pion i poziom - wieÅ¼a i hetman
 				if (piece.pieceName == FEN::FEN::ROOK_WHITE || piece.pieceName == FEN::FEN::ROOK_BLACK || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
 
-					// w pionie do góry
+					// w pionie do gÃ³ry
 					for (int y = (field.y + 1); y<=8; y++) {
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
 
@@ -670,14 +649,17 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								capturesMoves[piece.power - tempBoard.getField(field.x, y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								int fieldIndex = tempBoard.calculateIndex(field.x, y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, field.x, y));
 							}
 
 							break;
 						}
 					}
 
-					// w pionie w dó³
+					// w pionie w dÃ³Å‚
 					for (int y = (field.y - 1); y >= 1; y--) {
 
 						bool isEmpty = tempBoard.isFieldEmpty(field.x, y);
@@ -687,7 +669,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(field.x, y)) {
-								capturesMoves[piece.power - tempBoard.getField(field.x, y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, field.x, y));
+								int fieldIndex = tempBoard.calculateIndex(field.x, y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, field.x, y));
 							}
 
 							break;
@@ -703,7 +688,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
-								capturesMoves[piece.power - tempBoard.getField(x, field.y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								int fieldIndex = tempBoard.calculateIndex(x, field.y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, x, field.y));
 							}
 
 							break;
@@ -719,7 +707,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, field.y)) {
-								capturesMoves[piece.power - tempBoard.getField(x, field.y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, x, field.y));
+								int fieldIndex = tempBoard.calculateIndex(x, field.y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, x, field.y));
 							}
 
 							break;
@@ -734,7 +725,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				
 				// skos - goniec i hetman
 				if (piece.pieceName == FEN::FEN::BISHOP_BLACK || piece.pieceName == FEN::FEN::BISHOP_WHITE || piece.pieceName == FEN::FEN::QUEEN_BLACK || piece.pieceName == FEN::FEN::QUEEN_WHITE) {
-					// w lewy górny
+					// w lewy gÃ³rny
 
 					for (int x = (field.x - 1), y = (field.y + 1); (x >= 1 && y <= 8);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
@@ -744,7 +735,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								capturesMoves[piece.power - tempBoard.getField(x, y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
+								int fieldIndex = tempBoard.calculateIndex(x, y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -754,7 +748,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						y++;
 					}
 
-					// w prawy górny
+					// w prawy gÃ³rny
 					for (int x = (field.x + 1), y = (field.y + 1); (x <= 8 && y <= 8);) {
 						bool isEmpty = tempBoard.isFieldEmpty(x, y);
 
@@ -763,7 +757,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								capturesMoves[piece.power - tempBoard.getField(x, y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
+								int fieldIndex = tempBoard.calculateIndex(x, y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -782,7 +779,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								capturesMoves[piece.power - tempBoard.getField(x, y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
+								int fieldIndex = tempBoard.calculateIndex(x, y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -801,7 +801,10 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 						}
 						else {
 							if (tempBoard.canCaptureOnField(x, y)) {
-								capturesMoves[piece.power - tempBoard.getField(x, y).getPiece().power + 8].push_back(new move::NormalMove(field.x, field.y, x, y));
+								int fieldIndex = tempBoard.calculateIndex(x, y);
+								int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
+
+								capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, x, y));
 							}
 
 							break;
@@ -817,74 +820,35 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 				// skoczek
 
 				if (piece.pieceName == FEN::FEN::KNIGHT_BLACK || piece.pieceName == FEN::FEN::KNIGHT_WHITE) {
-					bool isAttackedByWeaker = fieldsDefendetByOpponentMin[i] == 1;
 
 					for (int km = 0; km < 8; km++) {
 						int x = field.x + this->knightMoves[km][0];
 						int y = field.y + this->knightMoves[km][1];
 
-						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
-							move::NormalMove* move = new move::NormalMove(field.x, field.y, x, y);
-							std::string addTo = "candidatesMoves";
+						if (tempBoard.canCaptureOnField(x, y)) {
+							int fieldIndex = tempBoard.calculateIndex(x, y);
+							int captureIndex = calculateCaputreIndex(piece.power, tempBoard.fields[fieldIndex].getPiece().power, fieldsDefendetByOpponentFrequency[fieldIndex] > 0);
 
-							if (
-								tempBoard.canCaptureOnField(x, y) ||
-								(field.y == 1 && (field.x == 2 || field.x == 7) && piece.pieceName == FEN::FEN::KNIGHT_WHITE) ||
-								(field.y == 8 && (field.x == 2 || field.x == 7) && piece.pieceName == FEN::FEN::KNIGHT_BLACK) ||
-								isAttackedByWeaker
-							) {
-								if ((tempBoard.canCaptureOnField(x, y))) {
-									capturesMoves[11 - tempBoard.getField(x, y).getPiece().power].push_back(move);
-								}
-								else {
-									bool isFieldProtectedByPawn = fieldsDefendetByOpponentMin[board::Board::calculateIndex(x, y)] == 1;
-
-									if (isAttackedByWeaker) {
-										if (isFieldProtectedByPawn) {
-											addTo = "possibleMoves";
-										}
-									}
-
-									if (x == 1 || x == 8 || y == 1 || y == 8) {
-										addTo = "possibleMoves";
-									}
-								}
-							}
-							else {
-								if (x == 1 || x == 8 || y == 1 || y == 8) {
-									addTo = "initiallyRejectedMoves";
-								}
-								else {
-									addTo = "possibleMoves";
-								}
-							}
-
-							if (addTo == "candidatesMoves") {
-								candidatesMoves.push_back(move);
-							}
-							else if (addTo == "possibleMoves") {
-								possibleMoves.push_back(move);
-							}
-							else if (addTo == "initiallyRejectedMoves") {
-								initiallyRejectedMoves.push_back(move);
-							}
+							capturesMoves[captureIndex].push_back(new move::NormalMove(field.x, field.y, x, y));
 						}
+						else if (tempBoard.isFieldEmpty(x, y)) {
+							possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
+						}				
 					}
 				}
 
-				// król
+				// krÃ³l
 
 				if (piece.pieceName == FEN::FEN::KING_BLACK || piece.pieceName == FEN::FEN::KING_WHITE) {
 					for (int km = 0; km < 8; km++) {
 						int x = field.x + this->kingMoves[km][0];
 						int y = field.y + this->kingMoves[km][1];
-
-						if (x > 0 && x < 9 && y > 0 && y < 9) {
-							if (fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] == 0) { // inaczej wchodzi pod szacha, bez sensu to liczyæ
+						if (tempBoard.isFieldEmpty(x, y) || tempBoard.canCaptureOnField(x, y)) {
+							if (fieldsDefendetByOpponentFrequency[board::Board::calculateIndex(x, y)] == 0) { // inaczej wchodzi pod szacha, bez sensu to liczyÃ¦
 								if (tempBoard.canCaptureOnField(x, y)) {
 									capturesMoves[0].push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
-								else if (tempBoard.canCaptureOnField(x, y)) {
+								else {
 									possibleMoves.push_back(new move::NormalMove(field.x, field.y, x, y));
 								}
 							}
@@ -899,7 +863,6 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	
 	std::vector<move::Move*> promotionMovesWithoutCheck = {};
 	std::vector<move::Move*> castleWithoutCheck = {};
-	std::vector<move::Move*> initiallyRejectedMovesWithoutCheck = {};
 
 	std::vector<move::Move*> flatCapturesMoves = {};
 
@@ -908,12 +871,16 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		int len2 = capturesMoves[i].size();
 
 		for (int j = 0; j < len2; j++) {
-			flatCapturesMoves.push_back(capturesMoves[i][j]);
 
 			tempBoard.makeMove(capturesMoves[i][j]);
 
-			if (this->didMoveMakeCheck(capturesMoves[i][j])) {
-				capturesMoves[i][j]->setMakesCheck();
+			if (!this->didMoveExposedMyKing(capturesMoves[i][j])) {
+
+				if (this->didMoveMakeCheck(capturesMoves[i][j])) {
+					capturesMoves[i][j]->setMakesCheck();
+				}
+
+				flatCapturesMoves.push_back(capturesMoves[i][j]);
 			}
 
 			tempBoard = tb;
@@ -924,12 +891,14 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(promotionMoves[i]);
 
-		if (this->didMoveMakeCheck(promotionMoves[i])) {
-			promotionMoves[i]->setMakesCheck();
-			checkMoves.push_back(promotionMoves[i]);
-		}
-		else {
-			promotionMovesWithoutCheck.push_back(promotionMoves[i]);
+		if (!this->didMoveExposedMyKing(promotionMoves[i])) {
+			if (this->didMoveMakeCheck(promotionMoves[i])) {
+				promotionMoves[i]->setMakesCheck();
+				checkMoves.push_back(promotionMoves[i]);
+			}
+			else {
+				promotionMovesWithoutCheck.push_back(promotionMoves[i]);
+			}
 		}
 
 		tempBoard = tb;
@@ -950,46 +919,18 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		tempBoard = tb;
 	}
 
-	len = candidatesMoves.size();
-	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(candidatesMoves[i]);
-
-		if (this->didMoveMakeCheck(candidatesMoves[i])) {
-			candidatesMoves[i]->setMakesCheck();
-			checkMoves.push_back(candidatesMoves[i]);
-		}
-		else {
-			otherMoves.push_back(candidatesMoves[i]);
-		}
-
-		tempBoard = tb;
-	}
-
 	len = possibleMoves.size();
 	for (int i = 0; i < len; i++) {
 		tempBoard.makeMove(possibleMoves[i]);
 
-		if (this->didMoveMakeCheck(possibleMoves[i])) {
-			possibleMoves[i]->setMakesCheck();
-			checkMoves.push_back(possibleMoves[i]);
-		}
-		else {
-			otherMoves.push_back(possibleMoves[i]);
-		}
-
-		tempBoard = tb;
-	}
-
-	len = initiallyRejectedMoves.size();
-	for (int i = 0; i < len; i++) {
-		tempBoard.makeMove(initiallyRejectedMoves[i]);
-
-		if (this->didMoveMakeCheck(initiallyRejectedMoves[i])) {
-			initiallyRejectedMoves[i]->setMakesCheck();
-			checkMoves.push_back(initiallyRejectedMoves[i]);
-		}
-		else {
-			initiallyRejectedMovesWithoutCheck.push_back(initiallyRejectedMoves[i]);
+		if (!this->didMoveExposedMyKing(possibleMoves[i])) {
+			if (this->didMoveMakeCheck(possibleMoves[i])) {
+				possibleMoves[i]->setMakesCheck();
+				checkMoves.push_back(possibleMoves[i]);
+			}
+			else {
+				otherMoves.push_back(possibleMoves[i]);
+			}
 		}
 
 		tempBoard = tb;
@@ -1000,8 +941,7 @@ std::vector<std::vector<move::Move*>> engine::Engine::findAllMovesOfPosition() {
 		promotionMovesWithoutCheck,
 		checkMoves,
 		castleWithoutCheck,
-		otherMoves,
-		initiallyRejectedMovesWithoutCheck
+		otherMoves
 	};
 }
 
@@ -1036,7 +976,7 @@ bool engine::Engine::isCheck(std::string onColor) {
 		}
 	}
 
-	// czy jest szachowany przez hetmana lub wie¿e
+	// czy jest szachowany przez hetmana lub wieÅ¼e
 	
 	// poziom - lewo
 	for (int x = (kingX - 1); x > 0; x--) {
@@ -1070,7 +1010,7 @@ bool engine::Engine::isCheck(std::string onColor) {
 		}
 	}
 
-	// pion - góra
+	// pion - gÃ³ra
 	for (int y = (kingY + 1); y < 9; y++) {
 		board::Field field = tempBoard.getField(kingX, y);
 
@@ -1086,7 +1026,7 @@ bool engine::Engine::isCheck(std::string onColor) {
 		}
 	}
 
-	// pion - dó³
+	// pion - dÃ³Å‚
 	for (int y = (kingY - 1); y > 0; y--) {
 		board::Field field = tempBoard.getField(kingX, y);
 
@@ -1103,7 +1043,7 @@ bool engine::Engine::isCheck(std::string onColor) {
 	}
 
 	// skos 
-	// lewy górny
+	// lewy gÃ³rny
 
 	for (int x = (kingX - 1), y = (kingY + 1); (x > 0 && y < 9);) {
 		board::Field field = tempBoard.getField(x, y);
@@ -1123,7 +1063,7 @@ bool engine::Engine::isCheck(std::string onColor) {
 		y++;
 	}
 
-	// prawy górny
+	// prawy gÃ³rny
 
 	for (int x = (kingX + 1), y = (kingY + 1); (x < 9 && y < 9);) {
 		board::Field field = tempBoard.getField(x, y);
@@ -1197,15 +1137,6 @@ bool engine::Engine::isCheck(std::string onColor) {
 		}
 	}
 
-	// król
-
-	if (
-		abs(tempBoard.whiteKingX - tempBoard.blackKingX) <= 1 &&
-		abs(tempBoard.whiteKingY - tempBoard.blackKingY) <= 1
-		) {
-		return true;
-	}
-
 	return false;
 }
 
@@ -1223,7 +1154,7 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 		opponentKingY = tempBoard.whiteKingY;
 	}
 	
-	// szachy bezpoœrednie
+	// szachy bezpoÅ›rednie
 
 	if (piece.pieceName == FEN::FEN::PAWN_WHITE) {
 		if (move->yTo + 1 == opponentKingY) {
@@ -1231,11 +1162,7 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 				return true;
 			}
 		}
-
-		return this->isCheck(tempBoard.colorOnMove == FEN::FEN::COLOR_WHITE ? FEN::FEN::COLOR_BLACK : FEN::FEN::COLOR_WHITE);
-	}
-
-	if (piece.pieceName == FEN::FEN::PAWN_BLACK) {
+	} else if (piece.pieceName == FEN::FEN::PAWN_BLACK) {
 		if (move->yTo - 1 == opponentKingY) {
 			if (abs(move->xTo - opponentKingX) == 1) {
 				return true;
@@ -1301,10 +1228,10 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 	}
 
 
-	// szachy z ods³ony
+	// szachy z odsÅ‚ony
 
-	// szach z ods³ony grozi tylko gdy przesuniêta figura sta³a na tej samej prostej (pion, poziom, skos) co król
-	// nie mog³a tak¿e staæ na skrajnym polu
+	// szach z odsÅ‚ony grozi tylko gdy przesuniÄ™ta figura staÅ‚a na tej samej prostej (pion, poziom, skos) co krÃ³l
+	// nie mogÅ‚a takÅ¼e staÄ‡ na skrajnym polu
 
 	if (move->xFrom == 1 || move->xFrom == 8 || move->yFrom == 1 || move->yFrom == 8) {
 		return false;
@@ -1313,7 +1240,7 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 	int xDiff = opponentKingX - move->xFrom;
 	int yDiff = opponentKingY - move->yFrom;
 
-	// sta³y na wspólnym skosie (grozi szach od goñca lub hetmana)
+	// staÅ‚y na wspÃ³lnym skosie (grozi szach od goÅ„ca lub hetmana)
 	if (abs(xDiff) == abs(yDiff)) {
 		int xInc = xDiff < 0 ? 1 : -1;
 		int yInc = yDiff < 0 ? 1 : -1;
@@ -1331,9 +1258,11 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 				}
 			}
 		}
+
+		return false;
 	}
 
-	// sta³y na wspólnym pionie (grozi szach od wie¿y lub hetmana)
+	// staÅ‚y na wspÃ³lnym pionie (grozi szach od wieÅ¼y lub hetmana)
 	if (xDiff == 0) {
 		if (move->xFrom == move->xTo) {
 			return false;
@@ -1353,9 +1282,11 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 				}
 			}
 		}
+
+		return false;
 	}
 
-	// sta³y na wspólnym poziomie (grozi szach od wie¿y lub hetmana)
+	// staÅ‚y na wspÃ³lnym poziomie (grozi szach od wieÅ¼y lub hetmana)
 	if (yDiff == 0) {
 		if (move->yFrom == move->yTo) {
 			return false;
@@ -1378,4 +1309,8 @@ bool engine::Engine::didMoveMakeCheck(move::Move* move) {
 	}
 
 	return false;
+}
+
+bool engine::Engine::didMoveExposedMyKing(move::Move* move) {
+	return this->isCheck(tempBoard.colorOnMove);
 }

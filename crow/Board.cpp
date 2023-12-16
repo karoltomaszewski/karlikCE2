@@ -218,8 +218,8 @@ double board::Board::evaluate() {
 	int x = 0;
 	int y = 8;
 
-	int blackDevelopedPieces = 0;
-	int whiteDevelopedPieces = 0;
+	bool whiteQueenOnStartingSquare = false;
+	bool blackQueenOnStartingSquare = false;
 
 	double pawnTable[64] = {
 		0,   0,   0,   0,   0,   0,  0,   0,
@@ -227,7 +227,7 @@ double board::Board::evaluate() {
 		-0.06,   0.07,  0.26,  0.31,  0.65,  0.56, 0.25, -0.2,
 	-0.14,  0.13,   0.06,  0.21,  0.33,  0.12, 0.17, -0.23,
 	-0.27,  -0.02,  -0.05,  0.22,  0.27,   0.06, 0.1, -0.25,
-	-0.26,  -0.04,  -0.04, 0,   0,   0.03, 0.33, -0.12,
+	-0.26,  -0.04,  -0.04, -0.1,   0,   0.03, 0.33, -0.12,
 	-0.35,  -0.01, -0.20, -0.43, -0.35,  0.24, 0.38, -0.22,
 		0,   0,   0,   0,   0,   0,  0,   0,
 	};
@@ -314,10 +314,10 @@ double board::Board::evaluate() {
 		 -0.73, -0.41,  0.72,  0.36,  0.23,  0.62,   0.07,  -0.17,
 		 -0.47,  0.60,  0.37,  0.65,  0.84, 1.29,  0.73,   0.44,
 		  -0.09,  -0.17,  0.19,  -0.23,  0.37,  0.69,  0.18,   0.22,
-		 -0.13,   0.04,  0.16,  0.13,  -0.28,  0.19,  0.21,   -0.08,
-		 -0.23,  -0.09,  0.12,  0.10,  0.19,  0.17,  0.25,  -0.16,
+		 -0.13,   0.04,  0.16,  0.23,  -0.28,  0.19,  0.21,   -0.08,
+		 -0.23,  -0.09,  0.22,  0.10,  0.19,  0.37,  0.25,  -0.16,
 		 -0.29, -0.53, -0.12,  -0.03,  -0.01,  0.18, -0.14,  -0.19,
-		-1.05, -0.11, -0.58, -0.33, -0.17, -0.28, -0.19,  -0.23,
+		-1.05, -0.11, -0.58, -0.33, -0.17, -0.28, -0.29,  -0.23,
 	};
 
 	double egKnightTable[64] = {
@@ -331,66 +331,27 @@ double board::Board::evaluate() {
 		-0.29, -0.51, -0.23, -0.15, -0.22, -0.18, -0.5, -0.64,
 	};
 
+	double queenTable[64] = {
+		-0.28, 0, 0.29, 0.12, 0.59, 0.44, 0.43, 0.45,
+		-0.24, -0.39, -0.05, 0.01, -0.16, 0.57, 0.28, 0.54,
+		-0.13, -0.17, 0.07, 0.08, 0.29, 0.56, 0.47, 0.57,
+		-0.27, -0.27, -0.16, -0.16, -0.01, 0.17, -0.02, -0.11,
+		-0.09, -0.26, -0.09, -0.1, -0.02, -0.04, 0.03, -0.03,
+		-0.14, 0.02, -0.11, -0.02, -0.05, 0.02, 0.14, 0.05,
+		-0.35, -0.08, 0.11, 0.02, 0.08, 0.15, -0.03, 0.01,
+		-0.01, -0.18, -0.09, 0.35, -0.15, -0.25, -0.31, -0.5,
+	};
 
-	if (this->getField(2, 8).pieceName != 'n') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(3, 8).pieceName != 'b') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(6, 8).pieceName != 'b') {
-		evaluation -= 0.06;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(7, 8).pieceName != 'n') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(4, 7).pieceName != 'p') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(5, 7).pieceName != 'p') {
-		evaluation -= 0.12;
-		blackDevelopedPieces++;
-	}
-
-	if (this->getField(2, 1).pieceName != 'N') {
-		evaluation += 0.06;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(3, 1).pieceName != 'B') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(6, 1).pieceName != 'B') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(7, 1).pieceName != 'N') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(4, 7).pieceName != 'P') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
-
-	if (this->getField(5, 7).pieceName != 'P') {
-		evaluation += 0.12;
-		whiteDevelopedPieces++;
-	}
+	double egQueenTable[64] = {
+		-0.09,  0.22, 0.22,  0.27,  0.27,  0.19,  0.1,  0.2,
+		-0.17,  0.2,  0.32,  0.41,  0.58,  0.25,  0.3,   0,
+		-0.2,   0.06,   0.09,  0.49,  0.47,  0.35,  0.19,   0.09,
+		  0.03,  0.22,  0.24,  0.45,  0.57,  0.4,  0.57,  0.36,
+		-0.18,  0.28,  0.19,  0.47,  0.31,  0.34,  0.39,  0.23,
+		-0.16, -0.27,  0.15,   0.06,   0.09,  0.17,  0.1,   0.05,
+		-0.22, -0.23, -0.30, -0.16, -0.16, -0.23, -0.36, -0.32,
+		-0.33, -0.28, -0.22, -0.43,  -0.05, -0.32, -0.2, -0.41,
+	};
 
 	for (int i = 0; i < 64; i++) {
 		x = (i % 8) + 1;
@@ -429,10 +390,12 @@ double board::Board::evaluate() {
 		else if (p == 'q') {
 			evaluation -= engine::Evaluator::QUEEN_BASIC_VALUE;
 
-			if (x != 4 || y != 8) { // not on starting field
-				evaluation += 0.3 * (6 - blackDevelopedPieces);
+			if (x == 4 && y == 8) {
+				blackQueenOnStartingSquare = true;
 			}
 
+			earlyEvaluation -= queenTable[i ^ 56];
+			egEvaluation -= egQueenTable[i ^ 56];
 			phase += 4;
 		} 
 		else if (p == 'k') {
@@ -458,6 +421,7 @@ double board::Board::evaluate() {
 
 			earlyEvaluation += knightTable[i];
 			egEvaluation += egKnightTable[i];
+
 			phase++;
 		}
 		else if (p == 'R') {
@@ -469,10 +433,13 @@ double board::Board::evaluate() {
 		}
 		else if (p == 'Q') {
 			evaluation += engine::Evaluator::QUEEN_BASIC_VALUE;
+			earlyEvaluation += queenTable[i];
+			egEvaluation += egQueenTable[i];
 
-			if (x != 4 || y != 8) { // not on starting field
-				evaluation -= 0.3 * (6 - whiteDevelopedPieces);
+			if (x == 4 && y == 1) {
+				blackQueenOnStartingSquare = false;
 			}
+
 			phase += 4;
 		}
 		else if (p == 'K') {
@@ -482,8 +449,16 @@ double board::Board::evaluate() {
 		}
 	}
 
-	if (phase > 24) {
+	if (phase >= 24) {
 		phase = 24;
+
+		if (blackQueenOnStartingSquare) {
+			evaluation -= 0.5;
+		}
+
+		if (whiteQueenOnStartingSquare) {
+			evaluation += 0.5;
+		}
 	}
 
 	return evaluation + ((earlyEvaluation * phase + egEvaluation * (24 - phase)) / 24);
